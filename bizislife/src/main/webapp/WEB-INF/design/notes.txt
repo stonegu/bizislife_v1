@@ -1,0 +1,67 @@
+1. schedule for module's instance (instanceSchedule)
+
+page selects module and schedule module's instances, if no schedule, then page uses the default one ( default instance, or default xml in moduledetail if no default instance)
+
+2. schedule for instance's jspview (instanceViewSchedule)
+
+instance schedules the instanceViews, in no schedule, then instance uses the default instanceView, if no default instanceView, instance then uses default jsp in moduledetail.
+
+======================
+real situation in page
+======================
+<div>
+	<div>
+		<!-- select module without schedule: 
+		     for no-product module: 
+		        moduleToHtml to use default module's instance in moduleInstance table if default instance can be found.
+		        then, default instance to use :
+		           scheculed instanceView
+		           or
+		           default instanceview
+		           or
+		           jsp in moduleDetail
+		        or
+		        moduleToHtml to use xml and jsp in moduleDetail
+		        
+		     for product module: 
+		        Note: current product uuid will be saved in request or session
+		        moduleToHtml to find current product, 
+		        and to find 
+		    	   scheduled instanceView for current product, 
+		           or 
+		           default instanceView for current product,
+		           or
+		    	   scheduled instanceView for current product's ancestor folder
+		    	   or
+		    	   default instanceView for current product's ancestor folder
+		    	   or
+		    	   default jsp in moduleDetail
+		-->
+		<c:import url="/moduleToHtml?moduleuuid=aaa"/>
+	</div>
+
+	<div>
+		<!-- select module with schedule: (product module can't have schedule)
+			for no-product module:
+				moduleToHtml to find scheduled instance and to use scheduled instance. 
+				then, scheduled instance to use: 
+		           scheculed instanceView
+		           or
+		           default instanceview
+		           or
+		           jsp in moduleDetail
+		        or
+		    	moduleToHtml to use default instance for the module, if no scheduled instance find
+				then, default instance to use: 
+		           scheculed instanceView
+		           or
+		           default instanceview
+		           or
+		           jsp in moduleDetail
+		    	or
+		    	moduleToHtml to use xml and jsp in moduleDetail
+		-->
+		<c:import url="/moduleToHtml?moduleuuid=aaa&instanceSchedule=bbb"/>
+	</div>
+
+</div>

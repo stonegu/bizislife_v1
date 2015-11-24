@@ -1,0 +1,86 @@
+Note : the first part of document is for finding angle funds.
+=============================================================
+
+The purposes of this CMS (Content Management System) is trying to help small businesses to create and manage their data and web pages easily, 
+also this CMS system is trying to create an environment that users in the system can share data and pages easily by creating the permissions by the data/page owners. 
+
+There have 3 major sub-systems created in the CMS to help support above purposes: page design sub-system, module design sub-system, permission setup sub-system.
+
+Page Design Sub-system
+--------------------
+This function gives users a easy way to design page's layout, user only needs to drag & drop to create/manage page layout, 
+schedule the contents to display on the page. But it doesn't mean that user can't customize the page by creating personal
+style, or special page structure, the Page Design Sub-system totally support that too. Next I will put some screenshots to 
+describe this function in more detail.
+
+First, I will illustrate how to use Page Design Sub-system to create/manage layout by drag & drop.
+
+Second, I will illustrate how to use Page Design Sub-system to schedule the page contents to display.
+
+Third, I will illustrate how to create personal styling & customized JavaScript
+
+Fourth, I will illustrate how to ..
+
+Module Design Sub-system
+----------------------
+As you can see from Page Design Sub-system, web page's contents are resided in page's containers. Page could have many containers, 
+one container can display image, another container can display text, or even more complicated, container displays images, texts and videos.
+There have infinite numbers of combined content types can be displayed in container. In Module Design Sub-system, I let user to define
+types of contents user likes to display in the page container, and these types of contents will be organized in Module.
+I will illustrate module concept in below examples.
+Example 1, container only displays image.
+
+Example 2, container displays multiple images and text.
+
+Example 3, container displays product informations.
+The concept of module is very flexible, you can even use module as product template. For example, the product template includes product name,
+product default image, product image list, price, description. As picture below:
+
+
+From this example, you can find that we can define any product structures, this will be very helpful for small business companies since these companies
+don't need spend lots of time and money to create a data structure to fit. 
+
+Example 4, HOW TO USE MODULE!
+This is the most important part. The key idea of the module is "create then instance". As the example 3 created a product template (module), 
+user can use this product template (module) to create N number of products by just changing the value in the template (module). 
+Next pics show you how to use product template (module) I created in Example 3 to create 3 products in the system.
+
+
+Next pics show you how to use image module create in Example 1 to display different pictures in different parts of page, or even in the different pages.
+
+
+Example 5, more for Module Design Sub-system.
+There have more for this sub-system, one very useful function is that this system can let user show different views with same data on the page by different date schedules.
+For example, user can ask system to display one product page view for most of the days, but another product page view for the Christmas. 
+This leading another very useful function that system allow user to create customized view for module instance. Next pic show you how to create 2 difference views for one
+module's instance, and schedule the view.
+
+....
+
+Permission Setup Sub-system
+---------------------------
+Without this sub-system, user can only create his/her own data/pages and use it. Now, with Permission Setup Sub-system, 
+user can ask other persons in the same company to manage data/pages with preset permissions, or, even much powerful is to share 
+data/pages to users not in the same company.
+
+Example 1, share data/page with person in same company
+
+
+Example 2, share data/page with person in different company
+I like to introduce two use cases here. The first one is Brand-Dealer use case. Another one is Developer-User use case.
+
+Brand-Dealer use case:
+Imaging a brand like Nike, if Nike puts products information in the system, and set permission (or even different permission) for dealers,
+all dealers can get shared products information that Nike shares with them. 
+
+
+
+
+
+
+
+
+
+
+
+

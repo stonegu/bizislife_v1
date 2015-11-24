@@ -1,0 +1,2286 @@
+DROP DATABASE bizislifeii;
+
+CREATE DATABASE bizislifeii character set utf8;
+
+##################################################################################################
+
+USE bizislifeii;
+
+##################################################################################################
+#
+#                    For Bizislife
+#
+##################################################################################################
+#
+# Main function: 
+# 1. User can create/manage organization
+# 2. User can upload/manage products
+# 3. User can create/manage website
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#                                           
+#                                               
+#                                               
+#                                               
+#                                               
+#                                               
+#                                               
+#                                   instanceviewschedule                                     
+#                                     *                  pageTreeNode      +-------> * ContainerTreeLevelView
+#                                     ^                      *   1         |                 1
+#                                     |                      ^   :         |                 :
+#                                     |                      :   :         |                 v
+#                                     -                      :   :         -                 *
+#         .........................   |                      :   :         |          ContainerTreeNode
+#         :ModuleInstanceInterface:   |                 .....:   :.......  |                 1
+#         :.......................:   1                 :               :  |                 :
+#                       :    instanceView               :               v  |                 v
+#                       :     *                         1               1  1                 1
+#                       :     ^                 pagetreelevelview  pagedetail 1 -|-> * containerdetail 1--|-->* containermoduleschedule 1--|-->* moduleinstanceschedule
+#                       :     +                    *                 * 1
+#                       v     1                    ^                 ^ |
+#                  moduleinstance *<-|-+           |                 | |
+#                                      |           |  +--------------+ +--|-->1 pagemeta
+#                                      1         +-+  |
+#         moduleTreeNode 1.......>1 moduledetail |  +-+            
+#               *                             *  |  | +--> * paymenthistory
+#               ^                             ^  |  | |
+#               :                             |  |  | |                 contactinfo                                 accountprofile
+#       moduletreelevelview *<-------------+  |  -  - -                 *         *                                   1
+#                                          |  |  |  | |                 ^         ^                                   ^   message * ---> 1 msgbody (Not used!)
+#                                          -  -  |  | |                 |         |                                   |   *     *
+#                                          |  |  |  | |                 -         +----------------|----------------+ -   ^     |
+#                                          |  |  |  | |                 |                                           | |   +     +-------> 1 activitylog
+#                                          1  1  1  1 1                 1                                           1 1   1
+#            organizationprofile 1 <--|- 1 organization [bizislife, others] 1 ---------------------|------------> * a c c o u n t
+#                                          1 1  1   1  1 1 1 1 1---------------------->* topictreelevelview 1       1   * 1 1
+#                                          | |  |   |  | | ^ |                                              :       |   | | :
+#              orgmeta 1 <---------|-------+ |  |   |  | | | |                                              v       |   | | :
+#                                            -  -   |  | | | |                                              *       v   | | :
+#                                            |  |   |  | | - -                              .. 1 topicTreeNode      *   | | :
+#                      +---------------------+  |   |  | | | |                              : +---|-------->* subscribe | | :
+#                      |                        |   |  | | | |                              v |  (5)                    | | :
+#                      v                        v   |  | | | +--------------------------> * 1 1                         | | :
+#                      *                        *   |  | | +--------* topicvisibleorg *<-1 topic                        | | :
+#          mediatreelevelview 1... ..>1 mediadetail |  | |     (4)                           1                          | | :
+#                  *             : :         *      |  | |                                   |                          | | :
+#                  ^             : :         ^      |  | |                               (4) |                          | | :
+#                  |             v :         |      |  | +--------------+                    v                          | | :
+#                  |             * 1         |      |  |                |                    *                          | | :
+#                  |        MediaTreeNode    |      |  |                |            topicvisiblegroup                  | | :
+#                  -                         -      |  |                |                    *                          | | :
+#                  |                         |      |  |                |                    |                          | | :
+#                  |                         |      |  |                |                    -                          | | :
+#                  |                         |      |  |                |                (4) |                          | | :
+#                  |                         |      |  |                |                    V                          | | :
+#                  +-----+-------------------+      |  |                |            (8)     1                          | | :
+#                        |                          |  |                +----------|---->*accountgroup*<----------------+ | :                                             
+#                        |                          -  -                                   1  1 1                         v :
+#                        |                          |  |                orgcanjoin * ......:  : |                (3)      * :
+#                        |                          |  |                                      : +-------------->*permission v 
+#                        |                          |  |                                      :                       (7)   *
+#                        |                          |  |                                      +...................>* pagesectionpermission???
+#                        |                          |  +--------------+                     .........................
+#                        |                          v                 v  ...................:ModuleInstanceInterface:
+#                        |                          *                 *  v                  :.......................:
+#                        |         entitytreelevelview 1... ..>1 entitydetail 1 --|--> * tag
+#                        |       (Entity-tree-level-view) : :     1 1 * 1 1   (6)
+#                        |                                : :     | ^ | | |
+#                        |                                v :     | | - - -
+#                        |                        (10)    * 1     | | | | |
+#                        |                       EntityTreeNode   | +-+ | +-----> * categorypageschedule
+#                        |                                        | (1) |
+#                        +----------------------------------------+     +-------> * productpageschedule
+#
+#
+#
+#                                                      ModuleMeta Design
+#                                                      =================
+#
+#                                       +--------------------|----------------------------+
+#                                       |                                                 |
+#                                       v                                                 |
+#                                       1                                                 1
+#                                  modulemeta 1 <------|----- 1 moduledetail 1--->* moduleinstance (entitydetail)
+#                                       1                             1                   1
+#                                       ^                             :                   :
+#                                       |                             v                   :
+#                                       |                             1                   :
+#                                       |                           module 1<.............:
+#                                       |                             1
+#                                       |                             |
+#                                       |                             v
+#                                       |                             *
+#                                       +----------|----------- 1 AttrGroup
+#                                       |                             1
+#                                       |                             |
+#                                       |                             v
+#                                       |                             *
+#                                       +----------|--------- 1 ModuleAttribute
+#
+#
+#
+#
+#                                                       permission Design
+#                                                    ======================
+#
+#
+#                                                                                                               +---|---> 1 media
+#                                     account 1------------------+                                              |
+#                                                                |                                              +---|---> 1 page
+#                                                                |         fromDate, toDate                     |
+#                                                                v                  ^                           +---|---> 1 moduledetail
+#                                                                *                  |                           |
+#                                                               permission (who, when, what, which)             +---|---> 1 entitydetail 
+#                                                                *             |           |    1               |
+#                                                                ^             v           |    |               1
+#                                                                |        accountId or     |    +-------> * permissionedstuff
+#                                                                |        groupId          v
+#                                     accountgroup 1-------------+                   permission type
+#                                                                                    + (deny or allow)
+#
+#
+#                               For example: to set permission on moduleDetail tree
+#
+#                                    module
+#                                       |
+#                                       +-- folder1
+#                                       |      |
+#                                       |      +-- module 1
+#                                       |      |
+#                                       |      +-- module 2
+#                                       |      |
+#                                       |      +-- module 3
+#                                       |      
+#                                       +-- module 4      
+#                                       |      
+#                                       +-- folder 2      
+#
+#             
+#                                                 How to give outside organizations' permission to access data
+#                                                 ============================================================
+#                               This is done by asking outside accounts to join accountgroup (GroupAccessLevel is global). And admin
+#                               sets the permissions on the accountgroup.
+#                               
+#                               1. steps to asking someone to join: (org A is asking org B to join)
+#                                  a) admin creates a outside accountgroup.
+#                                  b) admin can find a organization to send, Or
+#                                  c) admin can send to any account he knows
+#                               
+#                               2. steps to require to join: (org B is requiring to join org A)
+#                                  a) accounts in org B can send a msg to org A to ask for join.
+#                               
+#                               3. steps to join the outside accountgroup: (org B is joining org A)
+#                                  a) account received a msg or email, there has a link or button there to click for join.
+#                               
+#                               4. steps to setup accountgroup's joinableOrganizations (org A is setup joinableOrganizations for outside accountgroup)
+#                                  Note: extra table (orgcanjoin) is required for accountgroup table, which hold informations for which org can join, how many persons 
+#                                        in that org can join.
+#                                        accountgroup 1 ---> * orgcanjoin
+#                                  steps:
+#                                  a) admin selects accountgroup
+#                                  b) admin modifies one of the orgcanjoin record (each record is for one org): modify total joinable accounts #.
+#                                  c) admin deletes one of the orgcanjoin record (admin can't add orgcanjoin record manually, the record in the table is 
+#                                     added automatically when org's member send join msg out.)
+#                               
+#                               5. steps to setup org's accounts to unjoin outside accountgroup (org B's account to unjoin outside accountgroup)
+#                                  Note: only admin in the org B or account self can unjoin any accountgroup.
+#                                  steps:
+#                                  a) account goes to account setting page to unjoin outside accountgroup
+#                                     outside accountgroups (not the everyone group) will only on account setting page when account joined.
+#                               
+#                               
+#                                                  Payment Design
+#                                                  ==============
+#                               
+#                             0 - 100 | 101 - 400 | 401 - 1000 | 1001 - 2000 | 2000 up
+#                             --------------------------------------------------------
+#                             
+#                             Pre-calculation:
+#                             0 - 100 (max: $20 [$0.2 / per instance / 30 days])
+#                             0.2 / per instance (include moduleDetail, module instance, product) / month
+#                             
+#                             101 - 400 (max: $20 + $45 = $65 [$0.1625 / per instance / 30 days])
+#                             0.15 / per instance / month
+#                             
+#                             401 - 1000 (max: $65 + $72 = $137 [$0.137 / per instance / 30 days])
+#                             0.12 / per instance / month
+#                             
+#                             1001 - 2000 (max: $137 + $100 = $237 [$0.1185 / per instance / 30 days])
+#                             0.1 / per instance /month
+#                             
+#                             2000 up
+#                             please contact
+#                               
+#                               
+#                             payment plan table (paymentplan):
+#                             ---------------------------------------------
+#                             maxInstance | daily payment | monthly payment | payment name | status     | maxCharsPerModuledetail | maxCharsPerInstance | maxCharsPerJsp | maxCharsPerCss
+#                             50                            $0                free plan      activated    10000                     20000                 20000            20000
+#                             100                           $20               plan 1         activated    10000                     20000                 20000            20000
+#                             400                           $70               plan 2         activated    10000                     20000                 20000            20000
+#                             1000                          $140              plan 3         activated    10000                     20000                 20000            20000
+#                             2000                          $240              plan 4         activated    10000                     20000                 20000            20000
+#                             -1            $0.01                             pay as go      suspended    10000                     20000                 20000            20000
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#
+#I) admin 
+#	1) create --> outside accountgroup <-+
+#	2) attach permission to -------------+
+#	3) send the outside accountgroup to someone to join through msg or email. 
+#		note: msg or email should include:
+#		a) what's the msg for? "xxx from organization zzz is asking you to join the group yyy, so you can get permissions to access zzz organization's private data. Total person can join the account for your organization is : ###"
+#		b) two actions : join or reject?
+#	4) someone receives the msg/email can click to join or reject.
+#	5) someone receives the msg/email can resend to other persons.
+#	
+#	
+#
+#
+#II) who can join the accountgroup? 
+#	accountgroup 1 --> * orgCanJoin (orgid, # of account can join, )
+#	note: 
+#	1) for outside accountgroups, anyone who likes to join accountgroups should be one of the org inside orgCanJoin table!!
+#	2) we still need outside and inside accountgroup categories for security reason.
+#	3) system will add receiver's orgid to orgCanJoin for the accountgroup when someone send this accountgroup out to ask receiver to join.
+#	4) admin guys in org can modify orgCanJoin table for accountgroup.
+#	5) org's accounts joined accountgroup will be removed the relationships if admin remove org from orgCanJoin table.
+#	
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#                               
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+################################################################################################################################################################
+#
+#                                                                 emailtemplate   activitylog   tree
+#
+################################################################################################################################################################
+################################################################################################################################################################
+#
+# Detail Information: 
+# ( 1): the * to 1 relationship between entity is for one entity can find its source (where does this entity come from). 
+#       For example: entity 2 is a clone entity from entity 1, entity 2 has a 1 to 1 relationship with entity 1, this means entity 2 can find its source entity 1.
+#                    entity 3 can be a clone entity from entity 1 too. one entity can be a parent for many entities
+#                    This is useful since entity 1 (source) changes some attributes and entity 2 (copy) can know the changes.
+# ( 3): permission is used to determine what's the permission for accountgroup or account in one or multiple point of the entity tree. 
+# ( 4): the relationships between topic to organization and topic to accountgroup are for private topic only (topicvisibleorg, topicvisiblegroup). 
+#       Any private topic which will be visible to organization or accountgroup will be subscritable to account.
+#       Note: public topics are visible to all.
+# ( 5): the relationship between topic and subscribe is used to determine who will be receive the msg.
+# ( 6): one entity can have many tags, this will be easy for search and product promotion.
+#       Note: tags will be one string column in entitydetail table, where list all entity tags. tags also have tag table to keep all used tags
+# ( 7): pagesectionpermission is used to determine which part of the page the account or account group can see ( will implement later)
+# ( 8): org can have multiple accountgroups
+# (10): entitytreelevelview has a nodes colume which include a serialized list of EntityTreeNode(s), and the detail of the node is store in entitydetail table.
+#
+#
+#
+#
+#############################
+# product tree design:
+#============================
+# There have two tables related to entity (entity for media, product, ...),
+# Table one: entitytreelevelview: stores all view information, for example: every level of tree for entity tree
+# Table two: entitydetail: stores all entity detail informations, includes serializd object
+#
+#
+#           ... 1) any click to open the folder node is a Ajax call to get a list of sub-nodes for the folder node. A list of sub-nodes in 2)
+#           :      
+#           :      ... 2) A list of sub-nodes will be one line of entry in table entitytreelevelview.
+#           :      :
+#           :      :
+#           :      v
+#           :  ..........
+#           v  :        :
+#    org1 --+--:folder1 :
+#           |  :        :
+#           +--:product1:
+#           |  :        :        ... 3) Details of the node will be saved in entitydetail table.
+#           +--:product2:        :
+#           |  :        :        v
+#           +--:folder2 :--+--product3 
+#           |  :        :  |
+#           +--:product5:  +--product4
+#              :        :  |
+#              ..........  +--folder3
+#
+#
+#
+#
+############################
+# page design
+############################
+#
+# org's menu tree
+# ===============
+#
+# biz --> accounts
+#     |
+#     +-> ...
+#     |
+#     +-> entities --> web modules --> string module
+#                  |               | 
+#                  |               +-> image module
+#                  |               |
+#                  |               +-> product module
+#                  |               |
+#                  |               +-> ...
+#                  |
+#                  +-> medias
+#
+#  org x --> accounts
+#        |
+#        +-> ...
+#        |
+#        +-> website --> desktop --> page 1 (click page will go to page layout screen, check below image!)
+#        |           |           |
+#        |           |           +-> page 2
+#        |           |           |
+#        |           |           +-> page 3
+#        |           |
+#        |           |
+#        |           +-> mobile --> page 1
+#        |                      |
+#        |                      +-> page 2
+#        |                      |
+#        |                      +-> page 3
+#        |
+#        |
+#        +-> entities --> medias
+#                     |
+#                     +-> web modules
+#                     |
+#                     +-> products
+#
+# org's product tree
+# ==================
+#
+# product --> folder 1
+#         |
+#         +-> folder 2 --> product 1
+#         |            |
+#         |            +-> product 2
+#         |            |
+#         |            +-> product 3
+#         |            
+#         +-> product 4            
+#         |            
+#         +-> folder 3 --> product 5
+#                      |
+#                      +-> folder 4 --> product 6
+#                                   |
+#                                   +-> product 7
+#                                   |
+#                                   +-> folder 5
+#
+# module instances tree
+# ==================================
+#
+#                                                        +--------------------------------+
+#                                                        | new instance for String Module |
+#                                                        +--------------------------------+
+#                                 right click to         | title: ___________________     |
+#                           ... [ add new String  ] ...> |                                |
+#                           :     module instance        | value: +------------------+    |
+#                           :                            |        |                  |    |
+#                           :                            |        |                  |    |
+#                           :                            |        |                  |    |
+#                           :                            |        |                  |    |
+#                           :                            |        +------------------+    |
+#                           :                            |                                |
+#                           :                            +--------------------------------+
+#                           :
+#                           v
+#      web modules --> String Module --> string module instance 1 (page 1[using], page 2[using])
+#                  |                 |
+#                  |                 +-> string module instance 2 (page 1[queue])
+#                  |                 |
+#                  |                 +-> string module instance 3
+#                  |                 |
+#                  |                 +-> string module instance 4 (page 3[using])
+#                  |
+#                  +-> Image Module --> image module instance 1 (page 1[using])
+#                  |                |
+#                  |                +-> image module instance 2 (page 2[using])
+#                  |                |
+#                  |                +-> image module instance 3 (page 2[queue])
+#                  |                          ............................................................ product tree structure with productModule instances (views) 
+#                  +-> ...                    :                 :                                          (all product tree folders and product nodes are JStree folder now, which can contain module instances (views)).
+#                  |                          v                 v
+#                  +-> Product Module --> product folder --> folder 1 --> product module instance 1
+#                                                        |            |
+#                                                        |            +-> product module instance 2 (page 2[using], page 3[using])
+#                                                        |            |
+#                                                        |            +-> product module instance 3 (page 3[queue], page 4[using])
+#                                                        |            |
+#                                                        |            +-> product module instance 4
+#                                                        |            |
+#                                                        |            +-> folder 2 --> product module instance 1
+#                                                        |                         |
+#                                                        |                         +-> product module instance 2 (page 4[using])
+#                                                        |                         |
+#                                                        |                         +-> product module instance 3 (page 4[queue])
+#                                                        |                         |
+#                                                        |                         +-> product 1
+#                                                        |                         |
+#                                                        |                         +-> product 2
+#                                                        |
+#                                                        +-> folder 3 --> product module instance 1
+#                                                        |
+#                                                        +-> folder 4 --> product module instance 1
+#                                                        |
+#                                                        +-> product 3 --> product module instance 1
+#                                                        |             |
+#                                                        |             +-> product module instance 2
+#                                                        |             |
+#                                                        |             +-> product module instance 3
+#                                                        |
+#                                                        +-> folder 5 --> folder 6
+#                                                                     |
+#                                                                     +-> product 4 --> product module instance 1
+#                                                                     |
+#                                                                     +-> product 5 +-> product module instance 1 (page 2[using])
+#                                                                             ^     |
+#                                                                             :     +-> product module instance 2
+#                                                                             :
+#                                                                             :
+#                                                                       right click to 
+#                                                                     [ add new Product ]
+#                                                                       Module instance
+#                                                                             :
+#                                                                             :
+#                                                                             v
+#                                     +-------------------------------------------------------------------------+
+#                                     |         new instance for Product Module                                 |
+#                                     +-------------------------------------------------------------------------+
+#                                     |                                                                         |
+#                                     |  layout design area:                              attribute list:       |
+#                                     |  +---------------------------------------------+  ===============       |
+#                                     |  |                                             |  available color       |
+#                                     |  |                                             |  description        <..!........... attribute list here with different color   
+#                                     |  |                                             |  manufacturing process |            to indicate the attribute is defined in 
+#                                     |  |                                             |  performance data      |            all products or not. 
+#              design layout here ....!..!.>                                           |                        | 
+#                                     |  |                                             |                        |
+#                                     |  |                                             |                        |
+#                                     |  |                                             |                        |
+#                                     |  |                                             |                        |
+#                                     |  |                                             |                        |
+#                                     |  |                                             |                        |
+#                                     |  |                                             |                        |
+#                                     |  +---------------------------------------------+                        |
+#                                     |                                                                         |
+#                                     |                                                                         |
+#                                     +-------------------------------------------------------------------------+ 
+#
+#
+#
+# org's page creation
+# ===================         +------------------+   +---+---------+---------+   +---------+
+#                             |     block 1 <... |   | b |    b    |         |..>| block 4 |
+#                             |                :.!.> | l |    l    |         |:  +---------+
+#                             +------------------+   | o |    o    |ock 1    |:  |   l     |
+#                             |     block 2      |   | c |    c    |         |:  |   o     |
+#                             +------------------+   | k |    k    |         |:  |   c     |
+# Desktop +-> folder 1                      ^        | 3 |    5    |         |:  |   k     |
+#         |                                 :        +---+---------+---------+:  |   3     |
+#         +-> folder 2 +-> page 1           :              ^              ....:  +---------+
+#                      |             .......:....... ......:.......       :
+#                      +-> page 2 +--:-> block 1 +-:-:-> block 3 -:--> block 4 
+#                                 |  :           | : :            :
+#                                 |  :           +-:-:-> block 5 -:--> block 6 --> block 7 --> block 8
+#                                 +--:-> block 2   : :............:      :            :          :.......
+#                                    :.....^.......:                     v            :..               :
+#                                          :                        +---------+  +------:-----+  +------:---------+
+#                                          :                        |   5     |  |  5   v     |  |      v 5       |
+#                                      .....                        +---------+  +---+---+----+  +---+--------+---+
+#                                      :                            |         |  |   | b |    |  |   | block 8|   |
+#                             ContainerDetail                       |         |  |   | l |    |  |   +--------+   |
+#                                                                   | block 6 |  |  b| o |k 6 |  |  b|   o    |6  |
+#                                                                   |         |  |   | c |    |  |   |   c    |   |
+#                                                                   |         |  |   | k |    |  |   |   k    |   |
+#                                                                   +---------+  |   | 7 |    |  |   |   7    |   |
+#                                                                                +---+---+----+  +---+--------+---+
+#
+# Note: block 1, block 2, ..., are the pretty name for the container, the details are saved in containerDetail.java
+#
+#
+#
+#
+#
+#                                                 ....... this is the page design. This design can be 'published' into pagedetail's detail
+#                                                 :
+# Desktop +-> folder 1                            v              
+#         |                      ................................................................           
+#         +-> folder 2 +-> page 1:                                                              :  
+#                      |         :   .........   .........   .........                          :
+#                      +-> page 2:+->:block 1:+->:block 3:-->:block 4:                          :
+#                            ^   :|  :       :|  :       :   :::::::::   .........   .........  :
+#                            :   :|  :       :+->:block 5:-->:block 6:-->:block 7:-->:block 8:  :
+#                            :   :+->:block 2:   :.......:   :.......:   :.......:   :.......:  :
+#                            :   :   :.......:      :                                           :
+#                            :   :        :.........:                                           :
+#                            :   :               :                                              :
+#                            :   :      ContainerTreeLevelView 1..  ....>1 ContainerDetail      :
+#                            :   :                               :  :                           :
+#                            :   :                               :  :                           :
+#                            :   :                               :  :                           :
+#                            :   :                               v  :                           :
+#                            :   :                               *  1                           :
+#                            :   :                           ContainerTreeNode                  :
+#                            :   :..............................................................:
+#                            :               :
+#                            :........... publish
+#                                            
+#
+#
+# 
+# org's page schedule
+# ===================
+#
+#
+#                                ....> schedule 1. stringModule instance 1 ("TOP BAR #1")
+#                                :
+#                                ....> schedule 2. stringModule instance 2 ("TOP BAR #2")
+#                                :
+#                                ....> schedule 3. stringModule instance 3 ("General String Info") **
+#                                :
+#        +-----------------------:--------------------+
+#        |         stringModule..:                    |
+#        |                                            |
+#        |-----------------+--------------------------|
+#        |                 |                          |
+#        |                 |                          |
+#        |  imgModule      |   productModule .........!...[param: productId]...> schedule 1. productModule instance for all products 
+#        |                 |                          |                      :
+#        |                 |                          |                      :.> schedule 2. productModule instance for group of products
+#        |                 |                          |                      :
+#        |                 |                          |                      :.> schedule 3. productModule instance 1 for productId
+#        |-----------------+--------------------------|                      :
+#        |         stringModule...                    |                      :.> schedule 4. productModule instance 2 for productId
+#        |                       :                    |
+#        +-----------------------:--------------------+
+#                                :
+#                                :...> schedule 1 stringModule instance 4 ("BOTTOM BAR #1")
+#                                :
+#                                :...> schedule 2 stringModule instance 3 ("General String Info") ** (Used in top area and also here!)
+#                                :
+#                                :...> schedule 3 stringModule instance 5 ("BOTTOM BAR #3")
+#
+# 
+#
+#                                               +----------------------------+             +==========================================================+
+#                                               | StringModule Instance List |             |              schedule list                     refresh   |
+#                         ...... [click] .....> +----------------------------+             +=====================+============+============+==========+
+#        +----------------:------------+        | string instance #1         |             |instance name        | from v     | to         | priority.!...> (if two instances have conflict in date schedule, the instance has priority=high shows)
+#        |         stringModule        |        | string instance #2 ::::::::!:: drag :    +=====================+============+============+==========+
+#        |                             |        | string instance #3         |        :    | string instance #3  | 2012/01/01 | 2012/03/31 |   low    |
+#                                               | ...                        |        :    +---------------------+------------+------------+----------+
+#                                                                                     :::> | string instance #2  |     :      |     :      |   high   |
+#                                                                                          +---------------------+-----:------+-----:------+----------+
+#                                                                                                                      :            :
+#                                                                                                                      :............:....> click to open a calendar to pick a date
+#                                                                                                                      
+#                                                                                                                      
+#                                               +---------------------------------------------------------+                                                                      
+#                                               | productModule instance tree                             |                                         
+#                        ...... [ click] .....> +---------------------------------------------------------+                                                                                             
+#        +---------------:-------------+        |                                                         |
+#        |       productModule         |        | product --> p.m. inst #1                                |
+#        |                             |        |         |                                               |
+#                                               |         +-> p.m. inst #2                                |             +======================================================================+
+#                                               |         |                                               |             |                          schedule list                     refresh   |
+#                                               |         +-> folder 1 --> p.m. inst #1                   |             +=================================+============+============+==========+
+#                                               |         |                                               |             |instance name                    | from v     | to         | priority |
+#                                               |         +-> folder 2 --> p.m. inst #1                   |             +=================================+============+============+==========+
+#                                               |                      |                                  |             | p.m. inst #1 for product folder | 2012/01/01 | 2012/03/31 |    low   |
+#                                               |                      +-> p.m. inst #2 ::::::::::::::::::!:: drag ::   +---------------------------------+------------+------------+----------+
+#                                               |                      |                                  |         :   | p.m. inst #1 for folder 1       | 2012/01/01 | 2012/03/31 |    low   |
+#                                               |                      +-> p.m. inst #3                   |         :   +---------------------------------+------------+------------+----------+
+#                                               |                      |                                  |         :   | p.m. inst #1 for folder 2       | 2012/01/01 | 2012/03/31 |    low   |
+#                                               |                      +-> product 10 --> p.m. inst #1    |         :   +---------------------------------+------------+------------+----------+
+#                                               |                      |                                  |         :   | p.m. inst #3 for folder 2       | 2012/03/31 | 2012/04/30 |    low   |
+#                                               |                      +-> folder 3 --> p.m. inst #1      |         :   +---------------------------------+------------+------------+----------+
+#                                               |                                                         |         ::> | p.m. inst #3 for folder 2       |            |            |    low   |
+#                                               +---------------------------------------------------------+             +---------------------------------+------------+------------+----------+
+#                                               
+#                                               
+#
+#
+#
+#
+#
+#######################
+# Module design:
+#######################
+#
+# Module will be in different server, and only module register information will need to be saved to biz server.
+#
+#
+#
+#
+#
+#
+# Module has two parts: xml & jsp
+#
+# xml:  1) define module param(s), 2) initial module param(s), 3) define how to organize the module param(s) in module instance setup screen
+# jsp:  1) the view for the module
+#
+# xml example:
+# ============
+#
+# Example #1: moduleExample1.xml
+#
+# <module>
+#   <paramGroup>
+#     <array>false</array>
+#     <param type="ModuleStringParam" name="string1">
+#       <title>String #1</title>
+#       <visibility>true</visibility>
+#       <documentation>this is the document for String #1</documentation>
+#       <required>true</required>
+#       <array>false</array>
+#       <minLength>0</minLength>
+#       <maxLength>100</maxLength>
+#       <defaultValue>default value 1</defaultValue>
+#     </param>
+#     <param type="ModuleIntegerParam" name="int1">
+#       <title>int #1</title>
+#       <visibility>true</visibility>
+#       <documentation>document for integer</documentation>
+#       <required>true</required>
+#       <array>false</array>
+#       <minValue>0</minValue>
+#       <maxValue>101</maxValue>
+#       <defaultValue>0</defaultValue>
+#     </param>
+#   </paramGroup>
+# </module>
+#
+#
+# Example #1: moduleExample1.jsp
+# 
+# <div>
+#    <p>you can use EL to reach module's param(s)</p>
+#    ${module.groupsMap["group1"][0].attrsMap["textAttr"][0].defaultValue}
+# </div>
+# 
+# 
+# 
+# 
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+################################################################################################
+#
+# permissions for ModuleDetail, moduleInstance, entityDetail for users
+#===========================================================================
+# Note: 
+#       1. permission will include 4 parts: who, when, what, which.
+#          A. who: who get permission: AccountGroup or Account?
+#          B. when: permission period of time, from when to when.
+#          C. what: what types of permission, allow or deny for create, update, delete, ...? (allow, deny and not specified!)
+#          D. which: which part of moduleDetail, entityDetail, ... will be for this permission.
+#
+# A. who: who get permission, AccountGroup or Account?
+#    . There will be one super group in the organization, which is Accountgroup.GroupType.SystemDefault. This group should always have one account inside. 
+#      This group has full permission in all the time for all moduleDetail, moduleInstance, entityDetail, account, page, etc. 
+#      This group cannot be modified except the name.
+#    . There will be one everyone Group shared within all organizations, all accounts will auto belong and always belong to everyone group. 
+#      Different organizations can set different permissions for everyone group.
+#    . Other than the SystemDefault group, other accounts, groups should follow the permissions set on group or account.
+#    . Merge pattern follows the strict pattern: For example, 
+#      1. account has two groups, one group allow moduleDetail modify, another group deny moduleDetail modify, system will use moduleDetail modify deny.
+#      2. account has one group, group allow moduleDetail modify, account deny moduleDetail modify, system will use moduleDetail modify deny.
+# B. when: permission period of time, from when to when.
+#    . each permission only valid during the time period: 
+#      if startdate is null and enddate is null too, this means the permission doesn't setup proper yet!!!
+#      if startdate is null but enddate isn't null, this means "from now to enddate".
+#      if startdate isn't null but enddate is null, this means "from startdate to forever".
+# C. what: what types of permission, allow or deny for create, update, delete, ...? (allow, deny and not specified!)
+#    . List of possible permissions [ permissionName(level) ]:
+#      Note: level here is for group or account use, some group or account only can set low level permission, like everyone group can only setup very low lever
+#            permissions for security reason.
+#            Also, the way that higher level permission merges with lower level permission still follow strict pattern: 
+#            For example: 
+#               1. higher level permission is allow or deny, but lower level permission is null, the result permission is allow or deny.
+#               2. higher level permission is allow, but lower level permission is deny, the result permission is deny. 
+#                  (entity can't read, it can't modify also, even entity's permission set to allow.) 
+#               3. higher level permission is deny, but lower level permission is allow, then the higher level permission is still denuy, lower level permission is still allow.
+#                  (entity cannot modify, but can read)
+#      For entity: moduleDetail, moduleInstance, product, media
+#      1. preview(0) : allow or deny or null
+#         preview is the basic permission for all other permissions, it will automatically get true if any other permissions are set for the target(s).
+#      2. read(1)    : allow, deny or null
+#         this permission can allow group or user to read more sensitive information for entity, like jsp, css, etc
+#      3. copy(3)    : allow, deny or null
+#         this permission can allow group or user to copy entity(s) to user organization's tree in proper section.
+#      4. modify(3)  : allow, deny or null
+#         this permission can allow group or user to make create, update, delete for folder (category), or update, delete for leaf. 
+# D. which: which part of moduleDetail, entityDetail, ... will be for this permission.
+#      . a list of entity's uuid in the tree.
+#    Note: if permission is set on folder (category), all leaf will get the same permission also, except leaf has it's own permission.
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS organization (
+id BIGINT NOT NULL AUTO_INCREMENT,
+orgname VARCHAR(255) NOT NULL,
+orgsysname VARCHAR(255) NOT NULL,
+orguuid VARCHAR(255) NOT NULL,
+salt VARCHAR(32),
+orglevel CHAR(2),
+createdate datetime,
+activatedate datetime,
+suspenddate datetime,
+deletedate datetime,
+creator_id BIGINT NOT NULL,
+rootentityid VARCHAR(255),
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# orgname : organization name
+# orgsysname : the org name should be the auto generated name, only hubba - admin can change the name
+# orglevel: (DatabaseRelatedCode.OrganizationRelated) 0: bizislife organization, 1: all other organizations, the application only supports two level of organization, bizislife organization is the top level.
+# creator_id: id to identify who creates the organization, 0 for system generated organization, -1 for self serve organization. (check DatabaseRelated.AccountRelated)
+# rootentityid: the entity id for organization's root entity
+
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS accountgroup (
+id BIGINT NOT NULL AUTO_INCREMENT,
+uuid VARCHAR(255) NOT NULL,
+groupname VARCHAR(255),
+accesslevel CHAR(2),
+description TEXT,
+createdate datetime,
+activatedate datetime,
+suspenddate datetime,
+creator_id BIGINT NOT NULL,
+organization_id BIGINT NOT NULL,
+grouptype CHAR(20),
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# accesslevel - global [1] (group can be accessed by any accounts, ie, partnership-group), private [0] (only available to inner account, ie, staff-group)
+#
+# creator_id: id to identify who creates the group, 0 for system generated group.
+#
+# organization_id: group belongs to one organization
+#
+# grouptype : accountgroup with grouptype is system default group (SystemDefault), which can not be deleted.
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS orgcanjoin (
+id BIGINT NOT NULL AUTO_INCREMENT,
+organization_id BIGINT NOT NULL,
+totalaccountcanjoin SMALLINT,
+joinkey VARCHAR(255),
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# organization_id: org can join
+# totalaccountcanjoin: how many accounts can join the group for org
+# joinkey: system generated key for join
+
+##############################################################################################
+
+#CREATE TABLE IF NOT EXISTS visibleorg (
+#id BIGINT NOT NULL AUTO_INCREMENT,
+#organization_id BIGINT NOT NULL,
+#PRIMARY KEY (id)
+#) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+
+##############################################################################################
+
+
+CREATE TABLE IF NOT EXISTS account (
+id BIGINT NOT NULL AUTO_INCREMENT,
+loginname VARCHAR(100) NOT NULL,
+pwd CHAR(32) NOT NULL,
+salt VARCHAR(32),
+accountuuid VARCHAR(255) NOT NULL,
+createdate datetime,
+activatedate datetime,
+suspenddate datetime,
+creator_id BIGINT NOT NULL,
+organization_id BIGINT NOT NULL,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# Note:
+# organization_id: account only can be in one organization, admin in hubba organization can access all accounts in all organization.
+#	But admin in Nike organization only can access accounts in nike organization.
+#
+# creator_id: id to identify who creates the account, 0 for system generated account, -1 for self serve account.
+#
+##############################################################################################
+
+
+CREATE TABLE IF NOT EXISTS organizationprofile(
+id BIGINT NOT NULL AUTO_INCREMENT,
+organization_id BIGINT NOT NULL,
+profileimage VARCHAR(255), 
+industry CHAR(10),
+subcategory CHAR(10),
+tag MEDIUMTEXT,
+founded_date datetime,
+description TEXT,
+businesshour TEXT,
+paypal_username VARCHAR(255),
+paypal_password VARCHAR(255),
+paypal_signature VARCHAR(255),
+paypal_appid VARCHAR(255),
+createdate datetime,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS orgmeta(
+id BIGINT NOT NULL AUTO_INCREMENT,
+orgid BIGINT NOT NULL,
+orguuid VARCHAR(255),
+domains TEXT,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# this table holds extra information for organization.
+#
+# domains: hold all possible domains for the org, separated by "," without space. 
+#          each domain may includes status info, like abc.com[pending], which means that abc.com hasn't pass domain's ownership validation.
+#          example for domains field: abc.com,bcd.com[pending],abc.net
+#
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS paymentplan(
+id BIGINT NOT NULL AUTO_INCREMENT,
+paymentname CHAR(60),
+dailypayment DECIMAL(10,2),
+monthlypayment DECIMAL(10,2),
+maxinstance MEDIUMINT,
+maxcharspermoduledetail BIGINT,
+maxcharsperinstance BIGINT,
+maxcharsperjsp BIGINT,
+maxcharspercss BIGINT,
+status CHAR(20),
+defaultplan CHAR(1),
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# name: payment name, like freemium, plan A, ...
+# dailypayment: there have 2 types of payment: daily or monthly. The plan can either be daily, or be monthly.
+# monthlypayment: there have 2 types of payment: daily or monthly. The plan can either be daily, or be monthly.
+# note: dailypayment or monthlypayment should put null if no dailypayment or no monthlypayment. (don't put zero '0')
+# maxinstance: maxium number of moduleDetails, moduleinstances & products can be in the system.
+# maxcharspermoduledetail: how many characters can have for one moduledetail's xml
+# maxcharsperinstance: how many characters can have for one instance's instance (xml string) or for one entityDetail's detail (xml string)
+# maxcharsperjsp: how many characters can have for each jsp file
+# maxcharspercss: how many characters can have for each css file
+# status: PaymentPlan.Status
+#
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS paymenthistory(
+id BIGINT NOT NULL AUTO_INCREMENT,
+planid BIGINT NOT NULL,
+orgid BIGINT NOT NULL,
+fromdate datetime,
+todate datetime,
+charged DECIMAL(10,2),
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+
+##############################################################################################
+
+
+CREATE TABLE IF NOT EXISTS accountprofile(
+id BIGINT NOT NULL AUTO_INCREMENT,
+account_id BIGINT NOT NULL,
+firstname VARCHAR(100),
+middlename VARCHAR(100),
+lastname VARCHAR(100),
+gender CHAR(1),
+birth_year CHAR(4),
+birth_month CHAR(2),
+birth_date CHAR(2),
+position VARCHAR(255),
+timezone VARCHAR(100),
+createdate datetime,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# Note:
+# gender - m: male, f: female (DatabaseRelatedCode.AccountRelated)
+
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS contactinfo(
+id BIGINT NOT NULL AUTO_INCREMENT,
+account_id BIGINT,
+organization_id BIGINT,
+contactnickname VARCHAR(255),
+email VARCHAR(255),
+apt_unit_number VARCHAR(10),
+street_number VARCHAR(10),
+address VARCHAR(255),
+city VARCHAR(255),
+state VARCHAR(255),
+zip VARCHAR(10),
+country VARCHAR(20),
+latitude FLOAT( 10, 6 ),
+longitude FLOAT( 10, 6 ),
+dayphone_country VARCHAR(6),
+dayphone_area VARCHAR(6),
+dayphone VARCHAR(20),
+dayphoneext VARCHAR(10),
+eveningphone_country VARCHAR(6),
+eveningphone_area VARCHAR(6),
+eveningphone VARCHAR(20),
+eveningphoneext VARCHAR(10),
+mobilephone_country VARCHAR(6),
+mobilephone_area VARCHAR(6),
+mobilephone  VARCHAR(20),
+fax VARCHAR(30),
+createdate datetime,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS topic (
+id BIGINT NOT NULL AUTO_INCREMENT,
+topicuuid VARCHAR(255) NOT NULL,
+title VARCHAR(255),
+topicroute VARCHAR(255) NOT NULL,
+accesslevel CHAR(2),
+creator_id BIGINT,
+org_id BIGINT,
+description TEXT,
+createdate datetime,
+suspenddate datetime,
+topictype char(2),
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+
+
+# Note:
+# topicroute: is the route in the tree, ie: sys; sys.org; ...  
+# accesslevel - public [1] (topic can be accessed by any accounts), private [0] (only available to the account in organizations, groups and accounts) Topic.AccessLevel.java
+# topictype - defined in Topic.Topictype.java. System topic is created by system, personal topic is created by person.
+# creator_id : account who created the topic
+# org_id : the topic belong to this organization. only administrators in this organization can modify the topic.
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS topicvisibleorg (
+id BIGINT NOT NULL AUTO_INCREMENT,
+topic_id BIGINT,
+topicuuid VARCHAR(255),
+organization_id BIGINT,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# this table is to store the info for topic visible to which org(s)
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS topicvisiblegroup (
+id BIGINT NOT NULL AUTO_INCREMENT,
+topic_id BIGINT,
+topicuuid VARCHAR(255),
+group_id BIGINT,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# this table is to store the info for topic visible to which group(s)
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS topicvisibleaccount (
+id BIGINT NOT NULL AUTO_INCREMENT,
+topic_id BIGINT,
+topicuuid VARCHAR(255),
+account_id BIGINT,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# this table is to store the info for topic visible to which account(s)
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS subscribe (
+id BIGINT NOT NULL AUTO_INCREMENT,
+topicuuid VARCHAR(255),
+account_id BIGINT,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# this table is used to save which account subscribed which topic information.
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS topictreelevelview (
+id BIGINT NOT NULL AUTO_INCREMENT,
+parentuuid VARCHAR(255),
+nodes LONGTEXT,
+createdate datetime,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# note:
+# parentuuid: parent node (entity) uuid (this uuid should be same uuid in topic table)
+# nodes: serialized topicTreeNode(s)
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS message (
+id BIGINT NOT NULL AUTO_INCREMENT,
+account_id BIGINT NOT NULL,
+accountuuid VARCHAR(255) NOT NULL,
+org_id BIGINT NOT NULL,
+from_id BIGINT,
+from_name VARCHAR(100),
+title VARCHAR(255),
+msgtype CHAR(2),
+msgstatus CHAR(2),
+createdate datetime,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# account_id : belong to which account
+# accountuuid : belong to which account
+# org_id : belong to which org
+# from_id : from which account, -1 : not from account, from system, check DatabaseRelatedCode.AccountRelated for more info
+# from_name : name of the sender, check DatabaseRelatedCode.AccountRelated for more info
+# type : Message.MsgType. topicPost: from topic, memberSend: from users.
+# status: Message.MsgStatus
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS msgbody (
+id BIGINT NOT NULL AUTO_INCREMENT,
+body TEXT,
+createdate datetime,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS tree(
+id BIGINT NOT NULL AUTO_INCREMENT,
+category CHAR(10),
+xmldata TEXT,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# for example: (topic tree)
+#
+#        sys - org - general
+#                  - create
+#                  - update
+#                  - delete
+#                  - ... 
+#                  - org1 - media
+#                         - product
+#                  - org2 - account
+#            - general - news
+#
+# Note: 
+#       Trees will be saved in DB or file, for example, topic tree will be in db, but left nav tree will be in xml file (leftNavMain.xml).
+#       For topic tree:
+#       All nodes here is a topic, sys is a topic, sys.org is a topic, sys.general.news is a topic, 
+#       all nodes(topics) have a topicuuid, which is saved in topic table with topic's other informations.
+#       So, the purpose of the topic tree is for user easy to select topic(s), user selects one node, which means user select all subnodes under the node,
+#       but user still can deselect subnode(s) as well.
+#       If a user/system likes to create new topic, he/she can find where inside the tree he/she like to create a topic, for example, user can select org,
+#       and creates a new topic under sys.org.
+#       If a user/system likes to remove a topic, he/she can find where is the topic inside the tree, and delete the topic with all subtopics under the topic.
+#       If a user likes to subscribe a topic, he/she can find where is the topic inside the tree, and subscribe. 
+#
+# category: tree for what purpose, like topic, ...
+# xmldata: the tree xml file.
+# Note:
+# 1) Topic tree: the root of the topic tree will be "sys"
+
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS permission (
+id BIGINT NOT NULL AUTO_INCREMENT,
+uuid VARCHAR(255),
+name VARCHAR(255),
+account_id BIGINT,
+group_id BIGINT,
+startdate datetime,
+enddate datetime,
+createdate datetime,
+targetorg BIGINT NOT NULL,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# NOTE:
+#
+# account_id or group_id : 
+# 		only account_id: permission for account
+#		only group_id: permission for group
+#
+#
+# if startdate is null and enddate is null too, this means the permission doesn't setup proper yet!!! - pending stage.
+# if startdate is null but enddate isn't null, this means "from now to enddate".
+# if startdate isn't null but enddate is null, this means "from startdate to forever"
+#
+# targetOrg: the permission for which organization's data. For example: everyone group has many permissions for different organizations's data.
+
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS permissionedstuff (
+id BIGINT NOT NULL AUTO_INCREMENT,
+permissiontype VARCHAR(30),
+allowdeny  CHAR(1) NOT NULL,
+category VARCHAR(30),
+pointuuid VARCHAR(255),
+parentuuid VARCHAR(255),
+permissionuuid VARCHAR(255),
+stufforg BIGINT NOT NULL,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# category: permissionedstuff.category: module, product
+# permissiontype is from Permission.Type
+# allowdeny : 0 for deny, 1 for allow
+# pointuuid: uuid from moduleDetail, product, page, media.
+# stufforg: the stuff belongs to which organization
+##############################################################################################
+
+# NAICS : http://www.census.gov/cgi-bin/sssd/naics/naicsrch?chart=2007
+CREATE TABLE IF NOT EXISTS naics(
+id BIGINT NOT NULL AUTO_INCREMENT,
+naicscode varchar(10),
+title varchar(255),
+catalevel TINYINT,
+supercata varchar(10),
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# level: only two levels now, industry and subcategory
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS propertyintable (
+pkey VARCHAR(255) NOT NULL,
+ptype VARCHAR(20),
+pvalue TEXT,
+pinfo1 VARCHAR(255),
+pinfo2 VARCHAR(255),
+PRIMARY KEY (pkey)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# ptype : PropertyType
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS emailtemplate (
+id BIGINT NOT NULL AUTO_INCREMENT,
+type VARCHAR(40),
+title VARCHAR(255),
+content TEXT,
+args VARCHAR(255),
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# type: EmailRelated.EmailType
+# args: keep all the arguments' name for the email content
+
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS activitylog (
+id BIGINT NOT NULL AUTO_INCREMENT,
+account_id BIGINT,
+organization_id BIGINT,
+type CHAR(20),
+data TEXT,
+createdate datetime,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# account_id: who created activity, 0 : system created
+# organization_id : the activity belongs to this organization. For example, biz admin created a new account for org1, the account_id is biz admin, and organization_id is org1's id.
+# type : ActivityLog.ActivityType
+# data : xml data. type is : ActivityLogData.java
+
+##############################################################################################
+# Entity tables
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS entitytreelevelview (
+id BIGINT NOT NULL AUTO_INCREMENT,
+parentuuid VARCHAR(255),
+nodes LONGTEXT,
+organization_id BIGINT NOT NULL,
+createdate datetime,
+creator_id BIGINT NOT NULL,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# note:
+# parentuuid: parent node (entity) uuid (this uuid should be same uuid in entitydetail table)
+# nodes: serialized EntityTreeNode(s)
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS entitydetail (
+id BIGINT NOT NULL AUTO_INCREMENT,
+entityuuid VARCHAR(255) NOT NULL,
+name VARCHAR(255),
+moduleuuid VARCHAR(255),
+type CHAR(4),
+detail LONGTEXT,
+parentuuid VARCHAR(255),
+path TEXT,
+organization_id BIGINT NOT NULL,
+createdate datetime,
+expiredate datetime,
+creator_id BIGINT NOT NULL,
+tag MEDIUMTEXT,
+visibility CHAR(1),
+from_org_id BIGINT,
+from_entity_uuid VARCHAR(255),
+catpageuuid_desktop VARCHAR(255),
+prodpageuuid_desktop VARCHAR(255),
+catpageuuid_mobile VARCHAR(255),
+prodpageuuid_mobile VARCHAR(255),
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# note: 
+# moduleuuid: from which module
+# type: entitydetail.EntityType
+# parentuuid: this will be the fold entity uuid. With this uuid, the system will know where the entity changed (from which folder).
+# path: the path of the entity in the fold, which includes all ancestor's uuid separated with "/".
+# from_entity_uuid: this will be the source of the entity (from where). check Detail Information (1). 
+# detail: serialized entity obj - the module's xml structure.
+# expiredate: the date that the product will not visible on the website (the record is still in the table, admin can renew the expire date in some circumstance)
+# organization_id: belong to which org now. If entity is copied from other org, the organization_id should change to current org.
+# visibility: entitydetail.visibility - 0 for hide (can't not be used), 1 for show.
+#
+# catpageuuid_desktop: default category pageuuid for desktop. This uuid will be used if no categorypageschedule be found!
+# prodpageuuid_desktop: default product pageuuid for desktop. this uuid will be used if no productpageschedule be found!
+# catpageuuid_mobile: default category pageuuid for mobile. This uuid will be used if no categorypageschedule be found!
+# prodpageuuid_mobile: default product pageuuid for mobile. this uuid will be used if no productpageschedule be found!
+# 
+#
+#
+##############################################################################################
+# Media tables
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS mediatreelevelview (
+id BIGINT NOT NULL AUTO_INCREMENT,
+parentuuid VARCHAR(255),
+nodes LONGTEXT,
+organization_id BIGINT NOT NULL,
+createdate datetime,
+creator_id BIGINT NOT NULL,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# note:
+# mediatreelevelview design is same as entitytreelevelview design
+# parentuuid: parent node (entity) uuid (this uuid should be same uuid in mediadetail table)
+# nodes: serialized mediaTreeNode(s)
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS mediadetail (
+id BIGINT NOT NULL AUTO_INCREMENT,
+mediauuid VARCHAR(255) NOT NULL,
+prettyname VARCHAR(255) NOT NULL,
+nodetype CHAR(4),
+contenttype VARCHAR(255),
+parentuuid VARCHAR(255),
+path TEXT,
+sourceuuid VARCHAR(255),
+organization_id BIGINT NOT NULL,
+createdate datetime,
+creator_id BIGINT NOT NULL,
+tag MEDIUMTEXT,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# note:
+# mediauuid: folder will create a new uuid in biz system, uploaded media will take uuid from uploaded fileserver.
+# prettyname: file original name
+# nodetype: mediadetail.MeidaType: (folder, img, pdf, ...)
+# contenttype: folder will not have contenttype, other medias' contenttype are from uploaded fileserver.
+# parentuuid: this will be the fold entity uuid. With this uuid, the system will know where the entity changed (from which folder).
+# path: the path of the entity in the fold, which includes all ancestor's uuid separated with "/".
+# sourceuuid: this will be the source of the entity (from where). check Detail Information (1). 
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS pagetreelevelview (
+id BIGINT NOT NULL AUTO_INCREMENT,
+type CHAR(10),
+parentuuid VARCHAR(255),
+nodes LONGTEXT,
+organization_id BIGINT NOT NULL,
+createdate datetime,
+creator_id BIGINT NOT NULL,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# note:
+# pagetreelevelview design is same as entitytreelevelview design
+# parentuuid: parent node uuid (this uuid should be same uuid in pagedetail table)
+# nodes: serialized pageTreeNode(s)
+# type: view for mobile, desktop, ...
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS pagedetail (
+id BIGINT NOT NULL AUTO_INCREMENT,
+pageuuid VARCHAR(255) NOT NULL,
+prettyname VARCHAR(255) NOT NULL,
+url VARCHAR(100),
+detail LONGTEXT,
+type CHAR(2),
+parentuuid VARCHAR(255),
+path TEXT,
+organization_id BIGINT NOT NULL,
+createdate datetime,
+creator_id BIGINT NOT NULL,
+from_org_id BIGINT,
+from_page_uuid VARCHAR(255),
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# note: 
+# type: pagedetail.Type: (folder, page_mobile, page_desktop, ...)
+# parentuuid: this will be the fold uuid. With this uuid, the system will know where the page changed (from which folder).
+# path: the path of the page in the fold, which includes all ancestor's uuid separated with "/".
+# detail: serialized page container objs. 
+# Note: any new container add or container deletion will affect containertreelevelview first, and will add a log in pagemeta's changelist.
+#       after use apply changes to formal, the container's tree change will apply to pagedetail's detail. 
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS pagemeta (
+id BIGINT NOT NULL AUTO_INCREMENT,
+pagemetauuid VARCHAR(255) NOT NULL,
+pageuuid VARCHAR(255) NOT NULL,
+title VARCHAR(255),
+defaultcss CHAR(1),
+css LONGTEXT,
+headcontent LONGTEXT,
+changelist LONGTEXT,
+
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# note:
+# changelist: hold a brief page change list info after page published. THE PAGE CAN BE PUBLISHED AGAIN IF CHANGELIST HAS SOMETHING. THE CHANGELIST WILL BE CLEANED AFTER PAGE PUBLISH.
+#             changelist is a Map of activity key with brife description.  
+# defaultcss: defined in pagemeta.defaultcss
+# css: customized page css
+# headcontent: all content will be in page head section.
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS modulemeta (
+id BIGINT NOT NULL AUTO_INCREMENT,
+uuid VARCHAR(255) NOT NULL,
+targetuuid VARCHAR(255) NOT NULL,
+metadata LONGTEXT,
+
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# note:
+# targetuuid: the uuid points to moduledetail, moduleinstance, attrgroup, or moduleattribute
+# metadata: serialized MetaData.java object
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS containertreelevelview (
+id BIGINT NOT NULL AUTO_INCREMENT,
+pageuuid VARCHAR(255),
+parentuuid VARCHAR(255),
+nodes LONGTEXT,
+organization_id BIGINT NOT NULL,
+createdate datetime,
+creator_id BIGINT NOT NULL,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# note:
+# pageuuid : belongs to with page
+# parentuuid: parent node uuid (this uuid should be same uuid in containerdetail table)
+# nodes: serialized containerTreeNode(s)
+# containertreelevelview design is same as entitytreelevelview design
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS containerdetail (
+id BIGINT NOT NULL AUTO_INCREMENT,
+containeruuid VARCHAR(255) NOT NULL,
+prettyname VARCHAR(255) NOT NULL,
+pageuuid VARCHAR(255),
+parentuuid VARCHAR(255),
+path TEXT,
+direction CHAR(1),
+topposition SMALLINT,
+leftposition SMALLINT,
+width SMALLINT,
+height SMALLINT,
+hexcolor CHAR(9),
+classnames VARCHAR(255),
+organization_id BIGINT NOT NULL,
+createdate datetime,
+creator_id BIGINT NOT NULL,
+deletable CHAR(1),
+editable CHAR(1),
+moduleuuid VARCHAR(255),
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# note: 
+# parentuuid: this will be the previous container uuid.
+# pageuuid : belongs to with page
+# path: the path of the page in the fold, which includes all ancestor's uuid separated with "/".
+# direction: 0 for left to right, 1 for top to bottom. if the parent is 0, current container will be 1.
+# deletable: 0 for no, 1 for yes - this container can be deleted or not
+# editable: 0 for no, 1 for yes - this container can be edit or not . 
+# moduleuuid: default module for the container, this module could be overwrited by schedule's module selection.
+# NOTE: if container has the schedule already, the container can't be editable
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS moduletreelevelview (
+id BIGINT NOT NULL AUTO_INCREMENT,
+parentuuid VARCHAR(255),
+nodes LONGTEXT,
+organization_id BIGINT NOT NULL,
+createdate datetime,
+creator_id BIGINT NOT NULL,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS moduledetail (
+id BIGINT NOT NULL AUTO_INCREMENT,
+moduleuuid VARCHAR(255) NOT NULL,
+prettyname VARCHAR(255) NOT NULL,
+type CHAR(4),
+parentuuid VARCHAR(255),
+path TEXT,
+description TEXT,
+xml LONGTEXT,
+jsp LONGTEXT,
+css LONGTEXT,
+organization_id BIGINT NOT NULL,
+from_org_id BIGINT,
+from_module_uuid VARCHAR(255),
+createdate datetime,
+creator_id BIGINT NOT NULL,
+visibility CHAR(1),
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# organization_id : belong to which org; NOTE: IF MODULE IS COPIED FROM ANOTHER ORG, THE organization_id SHOULD CHANGED TO CURRENT ORG ID!!! moduleuuid ALSO NEED TO CREATE A NEW ONE.
+# from_org_id : which org designs the module. If organization_id!=from_org_id, this means the module is copied from other org's public module.
+# description : module's description 
+# type : ModuleDetail.ModuleType
+# xml : the module's xml structure.
+# visibility : 0 for private, which can be only visible inside org
+#              1 for public, which can be visible to all organizations. Any organization can copy this module.
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS modulexml (
+id BIGINT NOT NULL AUTO_INCREMENT,
+moduleuuid VARCHAR(255) NOT NULL,
+name VARCHAR(255),
+description TEXT,
+xml LONGTEXT,
+orgid BIGINT,
+visibility CHAR(1),
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# note: table holds all modules which created by biz or other organizations
+# name : the module name, which should be unique, and the name should be same as the name for module jsp. This name also will be used in jsp to get module's value.
+#        biz's module name can be any name without space. other org's module name should start with org's id, like 3_modulename
+# description : module's description 
+# xml : the module's xml structure.
+# orgid : the module belongs to which org
+# visibility : 0 for private, which can be only visible inside org
+#              1 for public, which can be visible to all organizations. 
+
+INSERT INTO `bizislifeii`.`modulexml` (`name`, `description`, `xml`, `orgid`, `visibility`, `moduleuuid`) VALUES ('testModule1', 'test module 1', '<module>\n  <paramGroup name=\"group1\">\n    <array>false</array>\n    <param type=\"ModuleStringParam\" name=\"string1\">\n      <title>String #1</title>\n      <visibility>true</visibility>\n      <documentation>this is the document for String #1</documentation>\n      <required>true</required>\n      <array>false</array>\n      <minLength>0</minLength>\n      <maxLength>100</maxLength>\n      <defaultValue>default value 1</defaultValue>\n    </param>\n    <param type=\"ModuleIntegerParam\" name=\"int1\">\n      <title>int #1</title>\n      <visibility>true</visibility>\n      <documentation>document for integer</documentation>\n      <required>true</required>\n      <array>false</array>\n      <minValue>0</minValue>\n      <maxValue>101</maxValue>\n      <defaultValue>0</defaultValue>\n    </param>\n  </paramGroup>\n</module>', 1, '1', '725c62ac-a285-4a21-96dc-bb45d1ce2fed');
+
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS moduleinstance (
+id BIGINT NOT NULL AUTO_INCREMENT,
+moduleinstanceuuid VARCHAR(255) NOT NULL,
+name VARCHAR(255),
+moduleuuid VARCHAR(255),
+type CHAR(4),
+instance LONGTEXT,
+orgid BIGINT,
+createdate datetime,
+creator_id BIGINT NOT NULL,
+visibility CHAR(1),
+isdefault CHAR(1),
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# note: this table is the instance of modulexml
+# name : name for the instance.
+# moduleuuid : belongs to which moduledetail or which product or which product folder
+# type : this is for moduleinstance type, ModuleDetail.type: instance
+# instance : the module's xml structure.
+# orgid : belongs to which org.
+# visibility : 0 for hide (can't not be used), 1 for show.
+# isdefault : '1' is default, otherwise is not default 
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS instanceview (
+id BIGINT NOT NULL AUTO_INCREMENT,
+instanceviewuuid VARCHAR(255) NOT NULL,
+moduleuuid VARCHAR(255),
+moduleinstanceuuid VARCHAR(255),
+viewname VARCHAR(255),
+description TEXT,
+jsp LONGTEXT,
+css LONGTEXT,
+orgid BIGINT,
+createdate datetime,
+creator_id BIGINT NOT NULL,
+isdefault CHAR(1),
+viewtype CHAR(1),
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# isdefault : '1' is default, otherwise is not default
+# viewtype : InstanceView.type 
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS containermoduleschedule (
+id BIGINT NOT NULL AUTO_INCREMENT,
+uuid VARCHAR(255),
+containeruuid VARCHAR(255),
+moduleuuid VARCHAR(255),
+schedulename VARCHAR(255),
+startdate datetime,
+enddate datetime,
+createdate datetime,
+priority SMALLINT,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# containermoduleschedule holds the schedule information for modules, which module will be used in what date
+# priority: 0 - 9, low - high
+# Note:
+# if startdate is null and enddate is null too, this means the schedule doesn't setup proper yet!!!
+# if startdate is null but enddate isn't null, this means "from now to enddate".
+# if startdate isn't null but enddate is null, this means "from startdate to forever"
+
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS moduleinstanceschedule (
+id BIGINT NOT NULL AUTO_INCREMENT,
+uuid VARCHAR(255),
+containermodulescheduleuuid VARCHAR(255),
+containeruuid VARCHAR(255),
+moduleuuid VARCHAR(255),
+moduleinstanceuuid VARCHAR(255),
+schedulename VARCHAR(255),
+startdate datetime,
+enddate datetime,
+createdate datetime,
+priority SMALLINT,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# moduleinstanceschedule holds the schedule information for module's instances, which instance will be used in what date
+# priority: 0 - 9, low - high
+# Note:
+# if startdate is null and enddate is null too, this means the schedule doesn't setup proper yet!!!
+# if startdate is null but enddate isn't null, this means "from now to enddate".
+# if startdate isn't null but enddate is null, this means "from startdate to forever"
+
+##############################################################################################
+
+CREATE TABLE IF NOT EXISTS instanceviewschedule (
+id BIGINT NOT NULL AUTO_INCREMENT,
+uuid VARCHAR(255),
+moduleinstanceuuid VARCHAR(255),
+instanceviewuuid VARCHAR(255),
+schedulename VARCHAR(255),
+startdate datetime,
+enddate datetime,
+createdate datetime,
+priority SMALLINT,
+PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# instanceviewschedule holds the schedule information for instance's instanceview, which view will be used in what date
+# priority: 0 - 9, low - high
+# Note:
+# if startdate is null and enddate is null too, this means the schedule doesn't setup proper yet!!!
+# if startdate is null but enddate isn't null, this means "from now to enddate".
+# if startdate isn't null but enddate is null, this means "from startdate to forever"
+
+##############################################################################################
+# Quartz database struction section
+##############################################################################################
+#
+# In your Quartz properties file, you'll need to set 
+# org.quartz.jobStore.driverDelegateClass = org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+#
+#
+# By: Ron Cordell - roncordell
+#  I didn't see this anywhere, so I thought I'd post it here. This is the script from Quartz to create the tables in a MySQL database, modified to use INNODB instead of MYISAM.
+
+DROP TABLE IF EXISTS QRTZ_JOB_LISTENERS;
+DROP TABLE IF EXISTS QRTZ_TRIGGER_LISTENERS;
+DROP TABLE IF EXISTS QRTZ_FIRED_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_PAUSED_TRIGGER_GRPS;
+DROP TABLE IF EXISTS QRTZ_SCHEDULER_STATE;
+DROP TABLE IF EXISTS QRTZ_LOCKS;
+DROP TABLE IF EXISTS QRTZ_SIMPLE_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_CRON_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_BLOB_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_JOB_DETAILS;
+DROP TABLE IF EXISTS QRTZ_CALENDARS;
+
+CREATE TABLE QRTZ_JOB_DETAILS(
+JOB_NAME VARCHAR(200) NOT NULL,
+JOB_GROUP VARCHAR(200) NOT NULL,
+DESCRIPTION VARCHAR(250) NULL,
+JOB_CLASS_NAME VARCHAR(250) NOT NULL,
+IS_DURABLE VARCHAR(1) NOT NULL,
+IS_VOLATILE VARCHAR(1) NOT NULL,
+IS_STATEFUL VARCHAR(1) NOT NULL,
+REQUESTS_RECOVERY VARCHAR(1) NOT NULL,
+JOB_DATA BLOB NULL,
+PRIMARY KEY (JOB_NAME,JOB_GROUP))
+ENGINE=InnoDB;
+
+CREATE TABLE QRTZ_JOB_LISTENERS (
+JOB_NAME VARCHAR(200) NOT NULL,
+JOB_GROUP VARCHAR(200) NOT NULL,
+JOB_LISTENER VARCHAR(200) NOT NULL,
+PRIMARY KEY (JOB_NAME,JOB_GROUP,JOB_LISTENER),
+INDEX (JOB_NAME, JOB_GROUP),
+FOREIGN KEY (JOB_NAME,JOB_GROUP)
+REFERENCES QRTZ_JOB_DETAILS(JOB_NAME,JOB_GROUP))
+ENGINE=InnoDB;
+
+CREATE TABLE QRTZ_TRIGGERS (
+TRIGGER_NAME VARCHAR(200) NOT NULL,
+TRIGGER_GROUP VARCHAR(200) NOT NULL,
+JOB_NAME VARCHAR(200) NOT NULL,
+JOB_GROUP VARCHAR(200) NOT NULL,
+IS_VOLATILE VARCHAR(1) NOT NULL,
+DESCRIPTION VARCHAR(250) NULL,
+NEXT_FIRE_TIME BIGINT(13) NULL,
+PREV_FIRE_TIME BIGINT(13) NULL,
+PRIORITY INTEGER NULL,
+TRIGGER_STATE VARCHAR(16) NOT NULL,
+TRIGGER_TYPE VARCHAR(8) NOT NULL,
+START_TIME BIGINT(13) NOT NULL,
+END_TIME BIGINT(13) NULL,
+CALENDAR_NAME VARCHAR(200) NULL,
+MISFIRE_INSTR SMALLINT(2) NULL,
+JOB_DATA BLOB NULL,
+PRIMARY KEY (TRIGGER_NAME,TRIGGER_GROUP),
+INDEX (JOB_NAME, JOB_GROUP),
+FOREIGN KEY (JOB_NAME,JOB_GROUP)
+REFERENCES QRTZ_JOB_DETAILS(JOB_NAME,JOB_GROUP))
+ENGINE=InnoDB;
+
+CREATE TABLE QRTZ_SIMPLE_TRIGGERS (
+TRIGGER_NAME VARCHAR(200) NOT NULL,
+TRIGGER_GROUP VARCHAR(200) NOT NULL,
+REPEAT_COUNT BIGINT(7) NOT NULL,
+REPEAT_INTERVAL BIGINT(12) NOT NULL,
+TIMES_TRIGGERED BIGINT(10) NOT NULL,
+PRIMARY KEY (TRIGGER_NAME,TRIGGER_GROUP),
+INDEX (TRIGGER_NAME, TRIGGER_GROUP),
+FOREIGN KEY (TRIGGER_NAME,TRIGGER_GROUP)
+REFERENCES QRTZ_TRIGGERS(TRIGGER_NAME,TRIGGER_GROUP))
+ENGINE=InnoDB;
+
+CREATE TABLE QRTZ_CRON_TRIGGERS (
+TRIGGER_NAME VARCHAR(200) NOT NULL,
+TRIGGER_GROUP VARCHAR(200) NOT NULL,
+CRON_EXPRESSION VARCHAR(120) NOT NULL,
+TIME_ZONE_ID VARCHAR(80),
+PRIMARY KEY (TRIGGER_NAME,TRIGGER_GROUP),
+INDEX (TRIGGER_NAME, TRIGGER_GROUP),
+FOREIGN KEY (TRIGGER_NAME,TRIGGER_GROUP)
+REFERENCES QRTZ_TRIGGERS(TRIGGER_NAME,TRIGGER_GROUP))
+ENGINE=InnoDB;
+
+CREATE TABLE QRTZ_BLOB_TRIGGERS (
+TRIGGER_NAME VARCHAR(200) NOT NULL,
+TRIGGER_GROUP VARCHAR(200) NOT NULL,
+BLOB_DATA BLOB NULL,
+PRIMARY KEY (TRIGGER_NAME,TRIGGER_GROUP),
+INDEX (TRIGGER_NAME, TRIGGER_GROUP),
+FOREIGN KEY (TRIGGER_NAME,TRIGGER_GROUP)
+REFERENCES QRTZ_TRIGGERS(TRIGGER_NAME,TRIGGER_GROUP))
+ENGINE=InnoDB;
+
+CREATE TABLE QRTZ_TRIGGER_LISTENERS (
+TRIGGER_NAME VARCHAR(200) NOT NULL,
+TRIGGER_GROUP VARCHAR(200) NOT NULL,
+TRIGGER_LISTENER VARCHAR(200) NOT NULL,
+PRIMARY KEY (TRIGGER_NAME,TRIGGER_GROUP,TRIGGER_LISTENER),
+INDEX (TRIGGER_NAME, TRIGGER_GROUP),
+FOREIGN KEY (TRIGGER_NAME,TRIGGER_GROUP)
+REFERENCES QRTZ_TRIGGERS(TRIGGER_NAME,TRIGGER_GROUP))
+ENGINE=InnoDB;
+
+CREATE TABLE QRTZ_CALENDARS (
+CALENDAR_NAME VARCHAR(200) NOT NULL,
+CALENDAR BLOB NOT NULL,
+PRIMARY KEY (CALENDAR_NAME))
+ENGINE=InnoDB;
+
+CREATE TABLE QRTZ_PAUSED_TRIGGER_GRPS (
+TRIGGER_GROUP VARCHAR(200) NOT NULL,
+PRIMARY KEY (TRIGGER_GROUP))
+ENGINE=InnoDB;
+
+CREATE TABLE QRTZ_FIRED_TRIGGERS (
+ENTRY_ID VARCHAR(95) NOT NULL,
+TRIGGER_NAME VARCHAR(200) NOT NULL,
+TRIGGER_GROUP VARCHAR(200) NOT NULL,
+IS_VOLATILE VARCHAR(1) NOT NULL,
+INSTANCE_NAME VARCHAR(200) NOT NULL,
+FIRED_TIME BIGINT(13) NOT NULL,
+PRIORITY INTEGER NOT NULL,
+STATE VARCHAR(16) NOT NULL,
+JOB_NAME VARCHAR(200) NULL,
+JOB_GROUP VARCHAR(200) NULL,
+IS_STATEFUL VARCHAR(1) NULL,
+REQUESTS_RECOVERY VARCHAR(1) NULL,
+PRIMARY KEY (ENTRY_ID))
+ENGINE=InnoDB;
+
+CREATE TABLE QRTZ_SCHEDULER_STATE (
+INSTANCE_NAME VARCHAR(200) NOT NULL,
+LAST_CHECKIN_TIME BIGINT(13) NOT NULL,
+CHECKIN_INTERVAL BIGINT(13) NOT NULL,
+PRIMARY KEY (INSTANCE_NAME))
+ENGINE=InnoDB;
+
+CREATE TABLE QRTZ_LOCKS (
+LOCK_NAME VARCHAR(40) NOT NULL,
+PRIMARY KEY (LOCK_NAME))
+ENGINE=InnoDB;
+
+INSERT INTO QRTZ_LOCKS values('TRIGGER_ACCESS');
+INSERT INTO QRTZ_LOCKS values('JOB_ACCESS');
+INSERT INTO QRTZ_LOCKS values('CALENDAR_ACCESS');
+INSERT INTO QRTZ_LOCKS values('STATE_ACCESS');
+INSERT INTO QRTZ_LOCKS values('MISFIRE_ACCESS');
+commit; 
+
+
+
+
+
+
+
+##############################################################################################
+# Data insert section
+##############################################################################################
+
+
+########################################## naics ####################################################
+
+
+# ************************************************************
+# Sequel Pro SQL dump
+# Version 3408
+#
+# http://www.sequelpro.com/
+# http://code.google.com/p/sequel-pro/
+#
+# Host: localhost (MySQL 5.5.16-log)
+# Database: hubbadb2
+# Generation Time: 2012-07-03 18:40:46 +0000
+# ************************************************************
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+
+# Dump of table naics
+# ------------------------------------------------------------
+
+LOCK TABLES `naics` WRITE;
+/*!40000 ALTER TABLE `naics` DISABLE KEYS */;
+
+INSERT INTO `naics` (`id`, `naicscode`, `title`, `catalevel`, `supercata`)
+VALUES
+	(1,'1','Agriculture',1,'0'),
+	(2,'100','Crop Production',2,'1'),
+	(3,'101','Animal Production',2,'1'),
+	(4,'2','Forestry',1,'0'),
+	(5,'200','Timber Tract Operations',2,'2'),
+	(6,'201','Forest Nurseries and Gathering of Forest Products',2,'2'),
+	(7,'202','Logging',2,'2'),
+	(8,'3','Fishing',1,'0'),
+	(9,'300','Finfish Fishing',2,'3'),
+	(10,'301','Shellfish Fishing',2,'3'),
+	(11,'302','Other Marine Fishing',2,'3'),
+	(12,'4','Mining, Quarrying, and Oil and Gas Extraction',1,'0'),
+	(13,'400','Oil and Gas Extraction',2,'4'),
+	(14,'401','Mining (except Oil and Gas)',2,'4'),
+	(15,'402','Sand, Gravel, Clay, and Ceramic and Refractory Minerals Mining and Quarrying',2,'4'),
+	(16,'5','Utilities',1,'0'),
+	(17,'501','Electric Power Generation, Transmission and Distribution',2,'5'),
+	(18,'502','Natural Gas Distribution',2,'5'),
+	(19,'503','Water, Sewage and Other Systems',2,'5'),
+	(20,'6','Construction',1,'0'),
+	(21,'600','Residential Building Construction',2,'6'),
+	(22,'601','Commercial and Institutional Building Construction',2,'6'),
+	(23,'602','Heavy and Civil Engineering Construction',2,'6'),
+	(24,'603','Specialty Trade Contractors',2,'6'),
+	(25,'7','Manufacturing',1,'0'),
+	(26,'701','Food Manufacturing',2,'7'),
+	(27,'702','Beverage Manufacturing',2,'7'),
+	(28,'703','Textile Mills',2,'7'),
+	(29,'704','Apparel Manufacturing',2,'7'),
+	(30,'705','Luggage Manufacturing',2,'7'),
+	(31,'706','Wood Product Manufacturing',2,'7'),
+	(32,'707','Paper Manufacturing',2,'7'),
+	(33,'708','Printing and Related Support Activities',2,'7'),
+	(34,'709','Pharmaceutical and Medicine Manufacturing',2,'7'),
+	(35,'710','Machinery Manufacturing',2,'7'),
+	(36,'711','Computer and Electronic Product Manufacturing',2,'7'),
+	(37,'712','Transportation Equipment Manufacturing',2,'7'),
+	(38,'713','Furniture and Related Product Manufacturing',2,'7'),
+	(39,'8','Wholesale Trade',1,'0'),
+	(40,'800','Merchant Wholesalers, Durable Goods',2,'8'),
+	(41,'801','Merchant Wholesalers, Nondurable Goods',2,'8'),
+	(42,'9','Retail Trade',1,'0'),
+	(43,'900','Automobile Dealers',2,'9'),
+	(44,'901','Furniture Stores',2,'9'),
+	(45,'902','Electronics and Appliance Stores',2,'9'),
+	(46,'903','Building Material and Garden Equipment and Supplies Dealers',2,'9'),
+	(47,'904','Grocery Stores',2,'9'),
+	(48,'905','Beer, Wine, and Liquor Stores',2,'9'),
+	(49,'906','Pharmacies and Drug Stores',2,'9'),
+	(50,'907','Cosmetics, Beauty Supplies, and Perfume Stores',2,'9'),
+	(51,'908','Optical Goods Stores',2,'9'),
+	(52,'909','Gasoline Stations',2,'9'),
+	(53,'910','Clothing and Clothing Accessories Stores',2,'9'),
+	(54,'911','Sporting Goods, Hobby, Book, and Music Stores',2,'9'),
+	(55,'912','General Merchandise Stores',2,'9'),
+	(56,'10','Transportation',1,'0'),
+	(57,'1000','Air Transportation',2,'10'),
+	(58,'1001','Water Transportation',2,'10'),
+	(59,'1002','Truck Transportation',2,'10'),
+	(60,'1003','Transit and Ground Passenger Transportation',2,'10'),
+	(61,'1004','Couriers and Messengers',2,'10'),
+	(62,'11','Warehousing and Storage',1,'0'),
+	(63,'1100','General Warehousing and Storage',2,'11'),
+	(64,'1101','Refrigerated Warehousing and Storage',2,'11'),
+	(65,'1102','Farm Product Warehousing and Storage',2,'11'),
+	(66,'1103','Other Warehousing and Storage',2,'11'),
+	(67,'12','Publishing Industries (except Internet)',1,'0'),
+	(68,'1200','Newspaper Publishers',2,'12'),
+	(69,'1201','Book Publishers',2,'12'),
+	(70,'1202','Music Publishers',2,'12'),
+	(71,'13','Broadcasting (except Internet)',1,'0'),
+	(72,'1301','Radio Broadcasting',2,'13'),
+	(73,'1302','Television Broadcasting',2,'13'),
+	(74,'14','Telecommunications',1,'0'),
+	(75,'1401','Wired Telecommunications Carriers',2,'14'),
+	(76,'1402','Wireless Telecommunications Carriers (except Satellite)',2,'14'),
+	(77,'1403','Satellite Telecommunications',2,'14'),
+	(78,'1404','Other Telecommunications',2,'14'),
+	(79,'15','Finance and Insurance',1,'0'),
+	(80,'1502','Commercial and Retail Banking',2,'15'),
+	(81,'1503','Credit Unions',2,'15'),
+	(82,'1504','Insurance Carriers',2,'15'),
+	(83,'16','Real Estate',1,'0'),
+	(84,'1601','Offices of Real Estate Agents and Brokers',2,'16'),
+	(85,'1602','Real Estate Property Managers',2,'16'),
+	(86,'17','Rental and Leasing Services',1,'0'),
+	(87,'1701','Passenger Car Rental and Leasing',2,'17'),
+	(88,'1702','Consumer Goods Rental',2,'17'),
+	(89,'1703','Commercial and Industrial Machinery and Equipment Rental and Leasing',2,'17'),
+	(90,'18','Legal Services',1,'0'),
+	(91,'1801','Offices of Lawyers',2,'18'),
+	(92,'1802','Other Legal Services',2,'18'),
+	(93,'1803','Title Abstract and Settlement Offices',2,'18'),
+	(94,'1804','All Other Legal Services',2,'18'),
+	(95,'19','Accounting, Tax Preparation, Bookkeeping, and Payroll Services',1,'0'),
+	(96,'1900','Tax Preparation Services',2,'19'),
+	(97,'1901','Payroll Services',2,'19'),
+	(98,'1902','Other Accounting Services',2,'19'),
+	(99,'20','Architectural, Engineering, and Related Services',1,'0'),
+	(100,'2000','Architectural Services',2,'20'),
+	(101,'2001','Landscape Architectural Services',2,'20'),
+	(102,'2002','Engineering Services',2,'20'),
+	(103,'2003','Drafting Services',2,'20'),
+	(104,'2004','Building Inspection Services',2,'20'),
+	(105,'2005','Geophysical Surveying and Mapping Services',2,'20'),
+	(106,'2006','Specialized Design Services',2,'20'),
+	(107,'21','Advertising, Public Relations, and Related Services',1,'0'),
+	(108,'2100','Advertising Agencies',2,'21'),
+	(109,'2101','Public Relations Agencies',2,'21'),
+	(110,'2102','Media Buying Agencies',2,'21'),
+	(111,'2103','Media Representatives',2,'21'),
+	(112,'2104','Marketing Research and Public Opinion Polling',2,'21'),
+	(113,'22','Photographic Services',1,'0'),
+	(114,'2200','Photography Studios, Portrait',2,'22'),
+	(115,'2201','Commercial Photography',2,'22'),
+	(116,'23','Veterinary Services',1,'0'),
+	(117,'2300','Veterinary Services',2,'23'),
+	(118,'24','All Other Professional, Scientific, and Technical Services',1,'0'),
+	(119,'2400','All Other Professional, Scientific, and Technical Services',2,'24'),
+	(120,'25','Employment Services',1,'0'),
+	(121,'2500','Employment Placement Agencies',2,'25'),
+	(122,'2501','Executive Search Services',2,'25'),
+	(123,'2502','Temporary Help Services',2,'25'),
+	(124,'26','Travel Arrangement and Reservation Services',1,'0'),
+	(125,'2600','Travel Agencies',2,'26'),
+	(126,'2601','Tour Operators',2,'26'),
+	(127,'2602','Other Travel Arrangement and Reservation Services',2,'26'),
+	(128,'2603','Convention and Visitors Bureaus',2,'26'),
+	(129,'2604','All Other Travel Arrangement and Reservation Services',2,'26'),
+	(130,'27','Investigation and Security Services',1,'0'),
+	(131,'2700','Investigation Services',2,'27'),
+	(132,'2701','Security Guards and Patrol Services',2,'27'),
+	(133,'2702','Armored Car Services',2,'27'),
+	(134,'2703','Security Systems Services',2,'27'),
+	(135,'28','Educational Services',1,'0'),
+	(136,'2800','Elementary and Secondary Schools',2,'28'),
+	(137,'2801','Junior Colleges',2,'28'),
+	(138,'2802','Colleges, Universities, and Professional Schools',2,'28'),
+	(139,'2803','Technical and Trade Schools',2,'28'),
+	(140,'2804','Fine Arts Schools',2,'28'),
+	(141,'2805','Language Schools',2,'28'),
+	(142,'2806','All Other Schools and Instruction',2,'28'),
+	(143,'29','Health Care and Social Assistance',1,'0'),
+	(144,'2900','Offices of Physicians',2,'29'),
+	(145,'2901','Offices of Dentists',2,'29'),
+	(146,'2902','Offices of Chiropractors',2,'29'),
+	(147,'2903','Offices of Optometrists',2,'29'),
+	(148,'2904','Offices of Other Health Practitioners',2,'29'),
+	(149,'2905','Family Planning Centers',2,'29'),
+	(150,'2906','Outpatient Mental Health and Substance Abuse Centers',2,'29'),
+	(151,'2907','Kidney Dialysis Centers',2,'29'),
+	(152,'2908','Medical Laboratories',2,'29'),
+	(153,'2909','Diagnostic Imaging Centers',2,'29'),
+	(154,'2910','Home Health Care Services',2,'29'),
+	(155,'2911','Ambulance Services',2,'29'),
+	(156,'2912','Blood and Organ Banks',2,'29'),
+	(157,'2913','Hospitals',2,'29'),
+	(158,'2914','Community Care Facilities for the Elderly',2,'29'),
+	(159,'2915','Other Residential Care Facilities',2,'29'),
+	(160,'2916','Child and Youth Services',2,'29'),
+	(161,'2917','Services for the Elderly and Persons with Disabilities',2,'29'),
+	(162,'2918','Community Food Services',2,'29'),
+	(163,'2919','Community Housing Services',2,'29'),
+	(164,'2920','Vocational Rehabilitation Services',2,'29'),
+	(165,'2921','Child Day Care Services',2,'29'),
+	(166,'30','Arts, Entertainment, and Recreation',1,'0'),
+	(167,'3000','Performing Arts Companies',2,'30'),
+	(168,'3001','Spectator Sports',2,'30'),
+	(169,'3002','Museums',2,'30'),
+	(170,'3003','Historical Sites',2,'30'),
+	(171,'3004','Zoos and Botanical Gardens',2,'30'),
+	(172,'3005','Nature Parks and Other Similar Institutions',2,'30'),
+	(173,'3006','Amusement and Theme Parks',2,'30'),
+	(174,'3007','Amusement Arcades',2,'30'),
+	(175,'3008','Casinos',2,'30'),
+	(176,'3009','Golf Courses and Country Clubs',2,'30'),
+	(177,'3010','Skiing Facilities',2,'30'),
+	(178,'3011','Marinas',2,'30'),
+	(179,'3012','Fitness and Recreational Sports Centers',2,'30'),
+	(180,'3013','Bowling Centers',2,'30'),
+	(181,'31','Accommodation',1,'0'),
+	(182,'3100','Hotels and Motels',2,'31'),
+	(183,'3101','Bed-and-Breakfast Inns',2,'31'),
+	(184,'3102','All Other Traveler Accommodation',2,'31'),
+	(185,'3103','RV (Recreational Vehicle) Parks and Campgrounds',2,'31'),
+	(186,'3104','Rooming and Boarding Houses',2,'31'),
+	(187,'32','Food Services',1,'0'),
+	(188,'3200','Full-Service Restaurants',2,'32'),
+	(189,'3201','Limited-Service Restaurants',2,'32'),
+	(190,'3202','Cafeterias, Grill Buffets, and Buffets',2,'32'),
+	(191,'3203','Snack and Nonalcoholic Beverage Bars',2,'32'),
+	(192,'3204','Caterers',2,'32'),
+	(193,'3205','Mobile Food Services',2,'32'),
+	(194,'3206','Drinking Places (Alcoholic Beverages)',2,'32'),
+	(195,'33','Other Services',1,'0'),
+	(196,'3300','Automotive Repair and Maintenance',2,'33'),
+	(197,'3301','Consumer Electronics Repair and Maintenance',2,'33'),
+	(198,'3302','Home and Garden Equipment Repair and Maintenance',2,'33'),
+	(199,'3303','Hair, Nail, and Skin Care Services',2,'33'),
+	(200,'3304','Funeral Homes and Funeral Services',2,'33'),
+	(201,'3305','Drycleaning and Laundry Services',2,'33'),
+	(202,'3306','Pet Care (except Veterinary) Services',2,'33'),
+	(203,'34','Parking Lots and Garages',1,'0'),
+	(204,'3400','Parking Lots and Garages',2,'34'),
+	(205,'35','Non-profit Organizations',1,'0'),
+	(206,'3500','Non-profit Organizations',2,'35');
+
+/*!40000 ALTER TABLE `naics` ENABLE KEYS */;
+UNLOCK TABLES;
+
+
+
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+
+########################################## propertyintable ####################################################
+
+# ************************************************************
+# Sequel Pro SQL dump
+# Version 3408
+#
+# http://www.sequelpro.com/
+# http://code.google.com/p/sequel-pro/
+#
+# Host: localhost (MySQL 5.5.16-log)
+# Database: bizislifeii
+# Generation Time: 2012-07-06 01:09:52 +0000
+# ************************************************************
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+
+# Dump of table propertyintable
+# ------------------------------------------------------------
+
+LOCK TABLES `propertyintable` WRITE;
+/*!40000 ALTER TABLE `propertyintable` DISABLE KEYS */;
+
+INSERT INTO `propertyintable` (`pkey`, `pinfo1`, `pinfo2`, `ptype`, `pvalue`)
+VALUES
+	('validateMsg.field.alphaNumberUnderscore',NULL,NULL,'validateMsg','This field only accepts alphabet, number and underscore.'),
+	('validateMsg.field.confirmPwdNotSame',NULL,NULL,'validateMsg','The confirm password is not same as password.'),
+	('validateMsg.field.email',NULL,NULL,'validateMsg','Not a validated email address.'),
+	('validateMsg.field.loginname',NULL,NULL,'validateMsg','Not a validated login name.'),
+	('validateMsg.field.loginNameExist',NULL,NULL,'validateMsg','The same login name has been used.'),
+	('validateMsg.field.notnull',NULL,NULL,'validateMsg','This field cannot be empty.'),
+	('validateMsg.field.orgNameExist',NULL,NULL,'validateMsg','The same organization name has been used.'),
+	('validateMsg.field.select',NULL,NULL,'validateMsg','This field must be selected.'),
+
+	('system.permission.denied',NULL,NULL,'permissionMsg','You do not have enough privilege for this action.'),
+
+	('system.session.expired',NULL,NULL,'systemSessionMsg','Your session expired, you need to login and try again.'),
+
+	('system.form.submit.notsave',NULL,NULL,'systemFormMsg','Your datas are not saved because of the system problem.');
+	
+/*!40000 ALTER TABLE `propertyintable` ENABLE KEYS */;
+UNLOCK TABLES;
+
+
+
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+
+########################################## propertyintable ####################################################
+
+# ************************************************************
+# Sequel Pro SQL dump
+# Version 3408
+#
+# http://www.sequelpro.com/
+# http://code.google.com/p/sequel-pro/
+#
+# Host: localhost (MySQL 5.5.16-log)
+# Database: bizislifeii
+# Generation Time: 2012-07-23 19:08:52 +0000
+# ************************************************************
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+
+# Dump of table emailtemplate
+# ------------------------------------------------------------
+
+LOCK TABLES `emailtemplate` WRITE;
+/*!40000 ALTER TABLE `emailtemplate` DISABLE KEYS */;
+
+INSERT INTO `emailtemplate` (`id`, `type`, `title`, `content`, `args`)
+VALUES
+	(1,'newAccount_activate','New account is created, you need to verify your account first to login, Thanks!','<p>Thank you to register in <a href=\"www.bizislife.com\">BizIsLife</a>, you need to click below link to \nverify you account in our system, Thanks!</p>\n<p>\n<a href=\"http://{0}/accountVerify?hash={1}\" target=\"_blank\">Click here to activate your account</a>\n</p>\n<p>\nLogin name: {2}\n</p>\n<p>\nPassword: {3}\n</p>','hostname,loginuuid,loginname,password'),
+	(2,'bugReport','Bug report','<p>From IP: {0}</p><p>From user: {1}</p><p>Page: {2}</p><p>{3}</p>','ipAddress,fromUser,pagename,bugContent'),
+	(3,'applicationSubmit','Application submit','<p>From IP: {0}</p><p>From email: {1}</p>','ipAddress,fromEmail'),
+	(4,'contactInfo','Contact me','<p>From IP: {0}</p><p>Contact information: {1}</p>','ipAddress,contactinfo');
+	
+
+/*!40000 ALTER TABLE `emailtemplate` ENABLE KEYS */;
+UNLOCK TABLES;
+
+
+
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+
+
+
+
+
+
+
