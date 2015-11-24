@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<leftNavNode>
+	<prettyName>root</prettyName>
+	
+	<subNodes>
+		<prettyName>Home</prettyName>
+		<systemName>home</systemName>
+		<url>/</url>
+		<foldOpenAfterLoad>true</foldOpenAfterLoad>
+		
+		<subNodes>
+			<prettyName>Biz News</prettyName>
+			<systemName>news</systemName>
+			<url>/news?totalResultsNum=12</url>
+			<foldOpenAfterLoad>true</foldOpenAfterLoad>
+			<subNodes>
+				<prettyName>Subscribe</prettyName>
+				<systemName>subscribe</systemName>
+				<url>/subscribe</url>
+			</subNodes>
+		</subNodes>
+		
+		<subNodes>
+			<prettyName>Analytics</prettyName>
+			<systemName>analytics</systemName>
+			<url>/dashboard</url>
+			<foldOpenAfterLoad>true</foldOpenAfterLoad>
+			
+			<subNodes>
+				<prettyName>Dashboard</prettyName>
+				<systemName>dashboard</systemName>
+				<url>/dashboard</url>
+			</subNodes>
+			
+			<subNodes>
+				<prettyName>Report</prettyName>
+				<systemName>report</systemName>
+				<url>/report</url>
+			</subNodes>
+			
+		</subNodes>
+		
+	</subNodes>
+
+	<subNodes>
+		<prettyName>Organizations</prettyName>
+		<systemName>organizations</systemName>
+		<url>/organizations</url>
+		<foldOpenAfterLoad>true</foldOpenAfterLoad>
+		<subNodesUrl>operation=get_organizations</subNodesUrl>
+	</subNodes>
+	<systemName>root</systemName>
+</leftNavNode>

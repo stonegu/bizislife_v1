@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:ehcache="http://www.springmodules.org/schema/ehcache"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.1.xsd
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.1.xsd">
+
+	<beans:bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"> 
+		<beans:property name="location"> 
+			<beans:value>/WEB-INF/classes/GlobalConfiguration.properties</beans:value>
+		</beans:property>
+	</beans:bean>
+
+	<beans:bean id="task1" class="com.bizislife.core.Schedule.Example.WorkExample" />
+	<beans:bean id="task2" class="com.bizislife.core.Schedule.Example.WorkExample" />
+ 
+ 
+ 
+	<beans:bean name="job1" class="org.springframework.scheduling.quartz.JobDetailBean"
+	    p:jobClass="com.bizislife.core.Schedule.Example.CustomJob" >
+		<beans:property name="jobDataAsMap">
+			<beans:map>
+				<beans:entry key="worker" >
+					<beans:ref bean="task1" />
+				</beans:entry>
+			</beans:map>
+		</beans:property>
+	</beans:bean>
+  
+	<beans:bean name="job2" class="org.springframework.scheduling.quartz.JobDetailBean"
+	    p:jobClass="com.bizislife.core.Schedule.Example.CustomJob" >
+		<beans:property name="jobDataAsMap">
+			<beans:map>
+				<beans:entry key="worker" >
+					<beans:ref bean="task2" />
+				</beans:entry>
+			</beans:map>
+		</beans:property>
+	</beans:bean>
+  
+	<beans:bean id="cronTrigger1" class="org.springframework.scheduling.quartz.CronTriggerBean"
+		p:jobDetail-ref="job1"
+		p:startDelay="10000"
+		p:cronExpression="0 12 12 12 12 ?" />	
+	
+	<beans:bean id="cronTrigger2" class="org.springframework.scheduling.quartz.CronTriggerBean"
+		p:jobDetail-ref="job2"
+		p:startDelay="10000"
+		p:cronExpression="0 12 12 12 12 ?" />	
+
+	
+	<beans:bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean"
+	   p:waitForJobsToCompleteOnShutdown="true" >
+	      <beans:property name="triggers">
+	          <beans:list>
+				<beans:ref bean="cronTrigger1" />
+				<beans:ref bean="cronTrigger2" />
+	          </beans:list>
+	      </beans:property>
+		<beans:property name="applicationContextSchedulerContextKey">  
+		      <beans:value>applicationContext</beans:value>  
+		</beans:property>	      
+	
+	      <beans:property name="quartzProperties">
+	
+			<beans:props>
+			    <beans:prop key="org.quartz.scheduler.instanceName">${org.quartz.scheduler.instanceName}</beans:prop>
+			    <beans:prop key="org.quartz.scheduler.instanceId">${org.quartz.scheduler.instanceId}</beans:prop>
+			
+			    <beans:prop key="org.quartz.threadPool.class">${org.quartz.threadPool.class}</beans:prop>
+				<beans:prop key="org.quartz.threadPool.threadCount">${org.quartz.threadPool.threadCount}</beans:prop>
+				<beans:prop key="org.quartz.threadPool.threadPriority">${org.quartz.threadPool.threadPriority}</beans:prop>
+			
+				<beans:prop key="org.quartz.jobStore.misfireThreshold">${org.quartz.jobStore.misfireThreshold}</beans:prop>
+			
+				<beans:prop key="org.quartz.jobStore.class">${org.quartz.jobStore.class}</beans:prop>
+				<beans:prop key="org.quartz.jobStore.driverDelegateClass">${org.quartz.jobStore.driverDelegateClass}</beans:prop>
+				<beans:prop key="org.quartz.jobStore.useProperties">${org.quartz.jobStore.useProperties}</beans:prop>
+				<beans:prop key="org.quartz.jobStore.dataSource">${org.quartz.jobStore.dataSource}</beans:prop>
+				<beans:prop key="org.quartz.jobStore.tablePrefix">${org.quartz.jobStore.tablePrefix}</beans:prop>
+			
+				<beans:prop key="org.quartz.jobStore.isClustered">${org.quartz.jobStore.isClustered}</beans:prop>
+				<beans:prop key="org.quartz.jobStore.clusterCheckinInterval">${org.quartz.jobStore.clusterCheckinInterval}</beans:prop>
+			
+				<beans:prop key="org.quartz.dataSource.myDS.driver">${jdbc.driver.className}</beans:prop>
+				<beans:prop key="org.quartz.dataSource.myDS.URL">${jdbc.url}</beans:prop>
+				<beans:prop key="org.quartz.dataSource.myDS.user">${jdbc.username}</beans:prop>
+				<beans:prop key="org.quartz.dataSource.myDS.password">${jdbc.password}</beans:prop>
+				<beans:prop key="org.quartz.dataSource.myDS.maxConnections">${org.quartz.dataSource.myDS.maxConnections}</beans:prop>
+			</beans:props>
+	      
+	      </beans:property>
+		      
+	</beans:bean>
+	
+	
+</beans:beans>
+	
+	
+	

@@ -1,0 +1,25 @@
+<module>
+  <paramGroup>
+    <array>false</array>
+    <param type="ModuleStringParam" name="string1">
+      <title>String #1</title>
+      <visibility>true</visibility>
+      <documentation>this is the document for String #1</documentation>
+      <required>true</required>
+      <array>false</array>
+      <minLength>0</minLength>
+      <maxLength>100</maxLength>
+      <defaultValue>default value 1</defaultValue>
+    </param>
+    <param type="ModuleIntegerParam" name="int1">
+      <title>int #1</title>
+      <visibility>true</visibility>
+      <documentation>document for integer</documentation>
+      <required>true</required>
+      <array>false</array>
+      <minValue>0</minValue>
+      <maxValue>101</maxValue>
+      <defaultValue>0</defaultValue>
+    </param>
+  </paramGroup>
+</module>

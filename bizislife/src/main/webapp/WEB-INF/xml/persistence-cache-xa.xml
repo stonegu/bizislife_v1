@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="
+	http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+	">
+	
+	<context:property-placeholder location="/WEB-INF/classes/GlobalConfiguration.properties"/>
+
+	<bean id="mysqlXADataSource" class="com.mysql.jdbc.jdbc2.optional.MysqlXADataSource">
+		<property name="url" value="${jdbc.url}"/>
+		<property name="autoReconnect" value="true"/>
+		<property name="user" value="${jdbc.username}"/>
+       	<property name="password" value="${jdbc.password}"/>
+       	<property name="autoReconnectForPools" value="true"/>
+       	<property name="connectTimeout" value="30000"/>
+       	<property name="socketTimeout" value="30000"/>
+       	<property name="useLegacyDatetimeCode" value="true"/>
+	</bean>
+	<bean id="dsConnectionFactory" class="org.apache.commons.dbcp.managed.DataSourceXAConnectionFactory" depends-on="jbossTransactionManager">
+		<constructor-arg><ref bean="jbossTransactionManager"/></constructor-arg>
+		<constructor-arg><ref bean="mysqlXADataSource"/></constructor-arg>
+	</bean>
+
+	<bean id="pool" class="org.apache.commons.pool.impl.GenericObjectPool">
+		<property name="minEvictableIdleTimeMillis"><value>300000</value></property>
+		<property name="timeBetweenEvictionRunsMillis"><value>60000</value></property>
+		<property name="maxActive"><value>20</value></property>
+		<property name="maxIdle"><value>10</value></property>
+		<property name="testOnBorrow"><value>true</value></property>
+		<property name="factory" ref="poolableConnectionFactory"/>
+	</bean>
+
+
+	<bean id="poolableConnectionFactory" class="org.apache.commons.dbcp.PoolableConnectionFactory">
+		<constructor-arg index="0"><ref bean="dsConnectionFactory"/></constructor-arg>
+		<constructor-arg index="1"><ref bean="pool"/></constructor-arg>
+		<constructor-arg index="2"><null/></constructor-arg>
+		<constructor-arg index="3"><null/></constructor-arg>
+		<constructor-arg index="4"><value>false</value></constructor-arg>
+		<constructor-arg index="5"><value>true</value></constructor-arg>
+		<property name="validationQuery"><value>SELECT 1</value></property>
+	</bean>
+
+
+	<bean id="dataSource" class="org.apache.commons.dbcp.managed.ManagedDataSource" depends-on="pool, dsConnectionFactory">
+		<constructor-arg><ref bean="pool"/></constructor-arg>
+		<constructor-arg><bean factory-bean="dsConnectionFactory" factory-method="getTransactionRegistry"/></constructor-arg>
+	</bean>
+
+	<bean id="mbeanExporter" class="org.springframework.jmx.export.MBeanExporter" depends-on="dataSource">
+		<property name="beans">
+			<map>
+				<entry key="DBCP:name=connectionPool" value-ref="pool"/>
+			</map>
+		</property>
+	</bean>
+
+	<!-- reference: http://ingenious-camel.blogspot.ca/2012/01/how-to-use-jboss-transactions-in-spring.html -->
+	<bean id="systemPrereqs" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+		<property name="targetObject" value="#{@systemProperties}"/>
+		<property name="targetMethod" value="putAll"/>
+		<property name="arguments">
+			<props>
+				<prop key="com.arjuna.ats.arjuna.coordinator.defaultTimeout">30000</prop>
+			</props>    
+		</property>
+	</bean>
+
+	<bean id="jbossTransactionManager" class="com.arjuna.ats.internal.jta.transaction.arjunacore.TransactionManagerImple"/>
+	<bean id="jbossUserTransaction" class="com.arjuna.ats.jta.UserTransaction" factory-method="userTransaction"/>
+
+	<bean id="tmExporter" class="com.bizislife.util.SpringJNDIExporter" depends-on="jbossTransactionManager, jbossUserTransaction">
+		<property name="jndiMapping">
+			<map>
+				<entry key="TransactionManager" value-ref="jbossTransactionManager"/>
+				<entry key="UserTransaction" value-ref="jbossUserTransaction"/> 
+				<entry key="BizislifeDataSource" value-ref="mysqlXADataSource"/>
+			</map>
+		</property>
+	</bean>
+
+	<!-- Configure the Spring framework to use JTA transactions from Atomikos -->
+	<bean id="transactionManager" class="org.springframework.transaction.jta.JtaTransactionManager" depends-on="tmExporter">
+		<property name="transactionManager" ref="jbossTransactionManager"/>
+		<property name="userTransaction" ref="jbossUserTransaction"/>
+		<property name="allowCustomIsolationLevels" value="true"/>
+		<property name="defaultTimeout" value="30000"/>
+	</bean>
+<!-- 	
+	<bean name="S3Manager" class="com.hubba.core.entity.xa.XAS3Manager"
+	      depends-on="transactionManager">
+	</bean>
+ -->
+	<tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"/>
+
+
+
+	
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean" depends-on="transactionManager, tmExporter">
+		<property name="jtaTransactionManager" ref="jbossTransactionManager"></property>
+		<property name="dataSource" ref="dataSource"/>
+		<property name="packagesToScan">
+			<list>
+				<value>com.bizislife.core.hibernate.pojo</value>
+			</list>
+		</property>
+
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">${jdbc.hibernate.dialect}</prop>
+				<prop key="hibernate.show_sql">${jdbc.hibernate.show_sql}</prop>
+				<prop key="hibernate.hbm2ddl.auto">${jdbc.hibernate.hbm2ddl.auto}</prop>
+				<prop key="hibernate.generate_statistics">true</prop>
+
+				<prop key="hibernate.cache.infinispan.cfg">infinispan-config.xml</prop>
+				<prop key="hibernate.cache.region.factory_class">org.hibernate.cache.infinispan.InfinispanRegionFactory</prop>
+				<prop key="hibernate.cache.infinispan.use_synchronization">true</prop>
+				<prop key="hibernate.cache.infinispan.statistics">true</prop>
+
+				<prop key="hibernate.cache.use_second_level_cache">true</prop>
+				<prop key="hibernate.cache.use_query_cache">true</prop>
+
+				<prop key="hibernate.connection.isolation">3</prop>
+				<prop key="hibernate.current_session_context_class">jta</prop>
+				<prop key="hibernate.transaction.factory_class">org.hibernate.transaction.CMTTransactionFactory</prop>
+				<prop key="jta.UserTransaction">UserTransaction</prop>
+				<prop key="hibernate.cache.default_cache_concurrency_strategy">transactional</prop>
+			</props>
+		</property>
+
+		<property name="mappingResources">
+			<list>
+<!-- 			
+				<value>com/bizislife/core/hibernate/pojo/OrgVisibleGroup.hbm.xml</value>
+ -->				
+			</list>
+		</property>
+	</bean>
+
+</beans>

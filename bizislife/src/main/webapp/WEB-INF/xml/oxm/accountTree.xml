@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<leftNavNode>
+	<prettyName>root</prettyName>
+	
+	<subNodes>
+		<prettyName>Account Settings</prettyName>
+		<systemName>accountSettings</systemName>
+		<url>/accountSettings</url>
+	</subNodes>
+
+	<subNodes>
+		<prettyName>Messages</prettyName>
+		<systemName>messages</systemName>
+		<url>/messages?totalResultsNum=12</url>
+	</subNodes>
+
+	<subNodes>
+		<prettyName>ToDo</prettyName>
+		<systemName>todo</systemName>
+		<url>/todo</url>
+	</subNodes>
+
+	<systemName>root</systemName>
+	<url>/#</url>
+</leftNavNode>

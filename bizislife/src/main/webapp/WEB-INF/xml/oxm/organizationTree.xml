@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<leftNavNode>
+	<prettyName>root</prettyName>
+	
+	<subNodes>
+		<prettyName>Accounts</prettyName>
+		<systemName>accounts</systemName>
+		<url>/accounts</url>
+	</subNodes>
+
+	<subNodes>
+		<prettyName>Groups</prettyName>
+		<systemName>groups</systemName>
+		<url>/groups</url>
+	</subNodes>
+
+	<subNodes>
+		<prettyName>Website</prettyName>
+		<systemName>website</systemName>
+<!-- 		
+		<url>/website</url>
+ -->
+        <url>/websitePages</url>
+		<subNodes>
+			<prettyName>Pages</prettyName>
+			<systemName>responsivePages</systemName>
+			<url>/websitePages</url>
+		</subNodes>
+		<subNodes>
+			<prettyName>Config</prettyName>
+			<systemName>websiteConfig</systemName>
+			<url>/websiteConfig</url>
+		</subNodes>
+<!-- 
+		<subNodes>
+			<prettyName>Mobile</prettyName>
+			<systemName>mobile</systemName>
+			<url>/websiteMobile</url>
+		</subNodes>
+ -->		
+	</subNodes>
+
+	<subNodes>
+		<prettyName>Entity</prettyName>
+		<systemName>entity</systemName>
+<!-- 		
+		<url>/entity</url>
+ -->		
+            <url>/modules</url>
+		<subNodes>
+			<prettyName>Medias</prettyName>
+			<systemName>medias</systemName>
+			<url>/medias</url>
+		</subNodes>
+		
+		<subNodes>
+			<prettyName>Modules</prettyName>
+			<systemName>modules</systemName>
+			<url>/modules</url>
+		</subNodes>
+		
+		<subNodes>
+			<prettyName>Products</prettyName>
+			<systemName>products</systemName>
+			<url>/products</url>
+		</subNodes>
+		
+	</subNodes>
+
+	<systemName>root</systemName>
+	<url>/#</url>
+</leftNavNode>
