@@ -1,0 +1,295 @@
+package com.bizislife.core.controller.helper;
+
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+
+import com.bizislife.core.controller.component.ContainerTreeNode;
+import com.bizislife.core.controller.component.GeneralTreeNode;
+import com.bizislife.core.controller.component.JsTreeNode;
+import com.bizislife.core.controller.component.MediaTreeNode;
+import com.bizislife.core.controller.component.ModuleTreeNode;
+import com.bizislife.core.controller.component.TreeNode;
+import com.bizislife.core.controller.component.JsTreeNode.Attr;
+import com.bizislife.core.controller.component.JsTreeNode.Data;
+import com.bizislife.core.entity.converter.ContainerToPageDetailConvertor;
+import com.bizislife.core.hibernate.pojo.ContainerModuleSchedule;
+import com.bizislife.core.hibernate.pojo.EntityDetail;
+import com.bizislife.core.hibernate.pojo.MediaDetail;
+import com.bizislife.core.hibernate.pojo.ModuleInstanceSchedule;
+import com.bizislife.core.hibernate.pojo.ModuleTreeLevelView;
+import com.bizislife.core.hibernate.pojo.NodeDetail;
+import com.bizislife.core.hibernate.pojo.TreeLevelView;
+import com.bizislife.core.siteDesign.module.ModuleEntityCategoryListAttribute;
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.CompactWriter;
+import com.thoughtworks.xstream.io.xml.DomDriver;
+
+public class TreeHelp {
+	
+	public static <T> List<T> getTreeNodesFromXml(Class nodeClass, String nodes){
+		
+		if(StringUtils.isNotBlank(nodes) && TreeNode.class.isAssignableFrom(nodeClass)){
+			XStream stream = new XStream(new DomDriver());
+			stream.alias("treeNode", nodeClass);
+			return (List<T>)stream.fromXML(nodes.trim());
+		}
+		
+		return null;
+	}
+	
+	public static <T> String getXmlFromTreeNodes(List<T> nodes){
+		if(nodes!=null && nodes.size()>0){
+			if(TreeNode.class.isAssignableFrom(nodes.get(0).getClass())){
+				XStream stream = new XStream(new DomDriver());
+				stream.processAnnotations(ArrayList.class);
+				StringWriter sw = new StringWriter();
+				stream.alias("treeNode", nodes.get(0).getClass());
+				stream.marshal(nodes, new CompactWriter(sw));
+				return sw.toString();
+			}
+		}
+		return null;
+	}
+	
+	public static JsTreeNode containerModuleScheduleSwitchToJsTreeNode(ContainerModuleSchedule sched){
+		if(sched!=null){
+			JsTreeNode ret = new JsTreeNode();
+			
+			// for pretty name
+			Data data = ret.new Data();
+			data.setTitle(sched.getSchedulename());
+			ret.setData(data);
+			
+			// for system name
+			Attr attr = ret.new Attr();
+			attr.setId(sched.getUuid());
+			ret.setAttr(attr);
+			
+			// for rel
+			attr.setRel(JsTreeNode.NodeType.containerModuleSchedule.getSystemName());
+			
+			// don't set cssClassInfos here: attr.addCssClass(cssClassInfos);
+			
+			// don't set children info here: ret.setState("closed") || ret.setState("");
+			
+			return ret;
+			
+		}
+		return null;
+	}
+	
+	public static JsTreeNode moduleInstanceScheduleSwitchToJsTreeNode(ModuleInstanceSchedule sched){
+		if(sched!=null){
+			JsTreeNode ret = new JsTreeNode();
+			
+			// for pretty name
+			Data data = ret.new Data();
+			data.setTitle(sched.getSchedulename());
+			ret.setData(data);
+			
+			// for system name
+			Attr attr = ret.new Attr();
+			attr.setId(sched.getUuid());
+			ret.setAttr(attr);
+			
+			// for rel
+			attr.setRel(JsTreeNode.NodeType.moduleInstanceSchedule.getSystemName());
+			
+			// don't set cssClassInfos here: attr.addCssClass(cssClassInfos);
+			
+			// don't set children info here: ret.setState("closed") || ret.setState("");
+
+			return ret;
+		}
+		return null;
+	}
+	
+	
+	// this method fit: entitytreelevelview, moduletreelevelview, pagetreelevelview, containertreelevelview, mediatreelevelview
+	// but not fit: topictreelevelview
+	// the structure for nodesInTreeView should be : 
+	// <list><treeNode><prettyName>abc</prettyName><systemName>241f01c2-9082-409d-a72c-d8dbc7e988e9</systemName></treeNode></list> 
+	public static List<String> findAllNodeUuidsFromTreeView(String nodesInTreeView) {
+		if(StringUtils.isNotBlank(nodesInTreeView)){
+			
+			 List<String> uuids = new ArrayList<String>();
+			 
+			 int fromIndex = 0;
+			 int idx_begin = nodesInTreeView.indexOf(TreeNode.SYSTEMNAME+">", fromIndex);
+			 while (idx_begin>-1) {
+				 idx_begin = idx_begin + 11;
+				 int idx_end = nodesInTreeView.indexOf("<", idx_begin);
+				 if(idx_end>-1){
+					 String uuid = nodesInTreeView.substring(idx_begin, idx_end);
+					 
+					 uuids.add(uuid);
+					 
+					 idx_begin = nodesInTreeView.indexOf(TreeNode.SYSTEMNAME+">", idx_end);
+				 }
+			 }
+			 
+			 if(uuids.size()>0) return uuids;
+			
+		}
+		
+		return null;
+	}
+	
+	
+	/**
+	 * @param theClass the nodeDetails's class
+	 * @param nodeDetails the GeneralTreeNode will be generated by these nodes (based on path with node's uuid)
+	 * @return
+	 */
+	public static GeneralTreeNode generateTreeByNodeDetail(Class theClass, List nodeDetails, int levelOfTree){
+		if(theClass!=null && nodeDetails!=null && nodeDetails.size()>0){
+			if(theClass.equals(EntityDetail.class)){
+				List<EntityDetail> entityDetails = (List<EntityDetail>)nodeDetails;
+				
+				GeneralTreeNode generalTree = new GeneralTreeNode();
+				for(EntityDetail ed : entityDetails){
+					//  levelOfTree check
+					
+					if(StringUtils.isNotBlank(ed.getPath())){
+						String[] paths = ed.getPath().split("/");
+						if((paths.length+1)<=levelOfTree){ // paths.length+1: all ancestors ids in the paths + self's id
+							treeNodeGenerator(generalTree, ed);
+						}
+						
+					}else {
+						treeNodeGenerator(generalTree, ed);
+					}
+				}
+				return generalTree;
+				
+			}else if(theClass.equals(MediaDetail.class)){
+				// ...
+			}
+			
+			
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * @param generalTree tree need to be generated, this param can't be null, but it can be empty GeneralTreeNode.
+	 * @param nodeDetail the generalTree will be generated by nodeDetail's path with system uuid.
+	 */
+	public static void treeNodeGenerator(GeneralTreeNode generalTree, NodeDetail nodeDetail){
+		if(generalTree!=null && nodeDetail!=null){
+			String path = null;
+			String prettyName = null;
+			String systemName = null;
+			JsTreeNode.NodeType nodetype = null;
+			ModuleEntityCategoryListAttribute.Type catType = null;
+			
+			if(nodeDetail.getClass().equals(EntityDetail.class)){
+				EntityDetail entityNodeDetail = (EntityDetail)nodeDetail;
+				
+				path = entityNodeDetail.getPath();
+				prettyName = entityNodeDetail.getName();
+				systemName = entityNodeDetail.getEntityuuid();
+				if(entityNodeDetail.getType().equals(EntityDetail.EntityType.folder.getCode())){
+					nodetype = JsTreeNode.NodeType.folder;
+				}else if(entityNodeDetail.getType().equals(EntityDetail.EntityType.entity.getCode())){
+					nodetype = JsTreeNode.NodeType.leaf;
+				}
+				catType = ModuleEntityCategoryListAttribute.Type.Product;
+				
+			}else if(nodeDetail.getClass().equals(MediaDetail.class)){
+				//...
+			}
+			
+			if(StringUtils.isNotBlank(prettyName) && StringUtils.isNotBlank(systemName)
+				&& nodetype!=null && catType!=null){
+				
+				if(StringUtils.isBlank(path)){ // root
+					generalTree.setCatType(catType);
+					generalTree.setNodetype(nodetype);
+					generalTree.setPrettyName(prettyName);
+					generalTree.setSystemName(systemName);
+//					generalTree.setUrl(url);
+				}else{ // not root, the method will need to create all nodes based on pathsWithLeafUuid!!
+					
+					// path example: 35e5088f-563a-453e-b32e-1f863e97ba26/5f8047af-51db-4950-be1f-5d7798637898
+					String[] paths = path.trim().split("/");
+					if(paths!=null && paths.length>0){
+						String[] pathsWithLeafUuid = new String[paths.length+1];
+						for(int i=0; i<paths.length; i++){
+							pathsWithLeafUuid[i] = paths[i];
+						}
+						pathsWithLeafUuid[paths.length] = systemName;
+						
+						GeneralTreeNode currentTreeNode = generalTree; // from root
+						for(int i=0; i<pathsWithLeafUuid.length; i++){
+
+							if(StringUtils.equals(currentTreeNode.getSystemName(), pathsWithLeafUuid[i])){
+								
+							}else{ // currentTreeNode is a empty node, put systemName for the node
+								currentTreeNode.setSystemName(pathsWithLeafUuid[i].trim());
+							}
+							
+							// switch the currentTreeNode to next level
+							if(i<pathsWithLeafUuid.length-1){
+								boolean foundCurrentNode = false;
+								if(currentTreeNode.getSubNodes()!=null && currentTreeNode.getSubNodes().size()>0){
+									for(GeneralTreeNode gtn : currentTreeNode.getSubNodes()){
+										
+										if(StringUtils.equals(gtn.getSystemName(), pathsWithLeafUuid[i+1])){
+											foundCurrentNode = true;
+											currentTreeNode = gtn;
+											break;
+										}
+										
+									}
+								}
+								if(!foundCurrentNode){ // create a one if not found
+									GeneralTreeNode newCurrentNode = new GeneralTreeNode();
+									currentTreeNode.addSubNode(newCurrentNode);
+									currentTreeNode = newCurrentNode;
+								}
+								
+							}
+							
+						}
+						
+						// set all detail info for currentTreeNode:
+						if(currentTreeNode!=null){
+							currentTreeNode.setCatType(catType);
+							currentTreeNode.setNodetype(nodetype);
+							currentTreeNode.setPrettyName(prettyName);
+							currentTreeNode.setSystemName(systemName);
+						}
+					}
+					
+				}
+			}
+		}
+	}
+	
+	public static void sortGeneralTree(GeneralTreeNode tree, ModuleEntityCategoryListAttribute.SortType theSortType){
+		if(tree!=null && tree.getSubNodes()!=null && tree.getSubNodes().size()>0 
+				&& theSortType!=null && !theSortType.equals(ModuleEntityCategoryListAttribute.SortType.NotSort)){
+			
+			if(theSortType.equals(ModuleEntityCategoryListAttribute.SortType.Name)){ // sort by name
+				Collections.sort(tree.getSubNodes(), GeneralTreeNode.prettyNameSort_ASC);
+			}
+			
+			for(GeneralTreeNode subnode : tree.getSubNodes()){
+				sortGeneralTree(subnode, theSortType);
+			}
+			
+		}
+	}
+	
+	
+
+}
