@@ -1,0 +1,198 @@
+/* global css section  */
+
+/* 
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, font, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td {
+    border: 0 none;
+    margin: 0;
+    outline: 0 none;
+    padding: 0;
+}
+ */
+
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, font, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, form, label, table, caption, tbody, tfoot, thead, tr, th, td {
+    border: 0 none;
+    margin: 0;
+    outline: 0 none;
+    padding: 0;
+}
+
+.displaynone{
+	display: none;
+}
+
+.errorHighlight{
+	color: red;
+}
+
+.ui-widget{
+	font-size: 1em;
+}
+
+.redBorder {
+	border: 1px solid red;
+}
+
+.fontBold {
+	font-weight: bold;
+}
+
+.outdated{
+	text-decoration: line-through;
+}
+
+form{
+	padding: 0;
+	margin: 0;
+}
+
+a{
+	border: 0;
+}
+
+img{
+	border:0;
+}
+
+.lineEven{
+	background-color: #e0e0e0;
+}
+
+/*-- end global css section  --*/
+
+
+/* all tooltip css */
+#detailInfoPopupContainer {
+    position:absolute;
+    left:0;
+    top:0;
+    display:none;
+    z-index: 9009;
+}
+.detailInfoPopupTable {}
+#detailInfoContent {
+    background-color: #FFF;
+    min-width: 175px;
+    min-height: 50px;
+}
+.detailInfoPopupTable .personPopupImage {
+    margin: 5px;
+    margin-right: 15px;
+}
+.detailInfoPopupTable .corner {
+    width: 19px;
+    height: 15px;
+}
+.detailInfoPopupTable .topLeft {
+    background: url(/img/tooltip/balloon_topLeft.png) no-repeat;
+}
+.detailInfoPopupTable .bottomLeft {
+    background: url(/img/tooltip/balloon_bottomLeft.png) no-repeat;
+}
+.detailInfoPopupTable .left {
+    background: url(/img/tooltip/balloon_left.png) repeat-y;
+}
+.detailInfoPopupTable .right {
+    background: url(/img/tooltip/balloon_right.png) repeat-y;
+}
+.detailInfoPopupTable .topRight {
+    background: url(/img/tooltip/balloon_topRight.png) no-repeat;
+}
+.detailInfoPopupTable .bottomRight {
+    background: url(/img/tooltip/balloon_bottomRight.png) no-repeat;
+}
+.detailInfoPopupTable .top {
+    background: url(/img/tooltip/balloon_top.png) repeat-x;
+}
+.detailInfoPopupTable .bottom {
+    background: url(/img/tooltip/balloon_bottom.png) repeat-x;
+    text-align: center;
+}
+
+/* end all tooltip css */
+
+
+/* begin global tree part */
+
+li.schedActivated > a{
+	color:green;
+}
+
+/* end global tree part */
+
+
+/* begin page top , bottom , middle part*/
+.pagetop, .pagebottom{
+	position:fixed;
+	display:block;
+	width: 100%;
+	background: #314469;
+	z-index:1001;
+	color: #f2f2f2;
+	padding: 5px 0 5px 0;
+}
+
+.pagetop{
+	top:0px;
+	height: 30px;
+}
+.pagebottom{
+	bottom:0px;
+	height: 5px;
+}
+
+.pagemiddle{
+	width: 100%;
+	float: left;
+	padding: 40px 0;
+}
+/* end page top , bottom part, middle part*/
+
+
+
+/* put all not finished function menu's css here */
+#todo a{
+	color: gray;
+}
+#analytics a{
+	color: gray;
+}
+
+/* end put all not finished function menu's css here */
+
+/* for colorbox */
+
+#cboxPrevious, #cboxNext, #cboxClose, #cboxSlideshow {
+    cursor: pointer;
+}
+#cboxPrevious, #cboxNext, #cboxSlideshow, #cboxClose {
+    background: none repeat scroll 0 0 transparent;
+    border: 0 none;
+    margin: 0;
+    overflow: visible;
+    padding: 0;
+    width: auto;
+}
+#cboxClose {
+    background: url("/img/others/colorbox_controls_btns2.png") no-repeat scroll -25px 0 transparent;
+    bottom: 0;
+    height: 25px;
+    position: absolute;
+    right: 0;
+    text-indent: -9999px;
+    width: 25px;
+}
+
+/* 
+#cboxClose {
+    background: url("img/others/colorbox_controls_btns.png") no-repeat scroll -25px 0 transparent;
+    bottom: 0;
+    height: 25px;
+    position: absolute;
+    right: 0;
+    text-indent: -9999px;
+    width: 25px;
+}
+ */
+/* end for colorbox */
+
+

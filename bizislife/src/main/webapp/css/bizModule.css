@@ -1,0 +1,305 @@
+.moduleTree li.module a{
+	color: #0567A3;
+}
+.moduleTree li.productModule a{
+	color: #0567A3;
+}
+
+.moduleTree li.instance a{
+	color: #006600;
+}
+.moduleTree li.productInstance a{
+	color: #006600;
+}
+
+.moduleInstance .groupDuplicate, .moduleInstance .paramDuplicate, .moduleInstance .groupRemove, .moduleInstance .paramRemove{
+	cursor: pointer;
+}
+
+#instanceViewSchedule .scheduleTable input{
+	width: 70px;
+}
+
+/* for module design */
+.moduleDataStructDesign{
+	height: 450px;
+	width: 100%;
+	/* overflow-y: scroll; */ 
+}
+.moduleAttrListContainer{
+    border-right: 1px solid;
+    float: left;
+    height: 430px;
+    width: 20%;
+    overflow: auto;
+}
+.moduleDataStruct{
+    float: right;
+    height: 440px;
+    width: 79%;
+    overflow: auto;
+}
+.moduleDataStruct .groupset{
+	border: 1px solid;
+	width: 93%;
+	float: left;
+	margin-bottom: 20px;
+	position: relative;
+}
+.moduleDataStruct .groupset.duplicated{
+	border: 1px dashed;
+}
+.moduleDataStruct .groupset legend{
+    background-color: #808080;
+    color: white;
+    text-align: center;
+    width: 100%;
+    height: 26px;
+    line-height: 26px;
+}
+
+.moduleDataStruct .newGroupSetBtn{
+	border: 1px solid;
+	width: 100px;
+	float: left;
+	margin: 20px 0;
+}
+
+.moduleDataStruct .groupStatus{
+	width: 100%;
+	float: left;
+	color: #FF82BE;
+}
+
+.moduleDataStruct .attrListContainer{
+    width: 100%;	
+    float: left;
+    padding: 4px 0;
+    background-color: #E6E6E6;
+}
+
+/* for module attr */
+.moduleDataStruct .attrElements{
+	float: left;
+	width: 100%;
+	position: relative;
+}
+  
+.moduleDataStruct .attrsInGroup{
+	float: left;
+	margin: 2px 0;
+}
+
+.moduleDataStruct .attr{
+    border: 1px solid;
+    padding: 5px;
+    /* width: 97.5%; */
+    width: 480px;
+    margin: 10px 5px;
+    float: left;
+    background-color: #EEEEEE;
+    position: relative;
+}
+.moduleDataStruct .attr.duplicated{
+    border: 1px dashed;
+}
+
+.moduleDataStructTemp .attr, .moduleDataStruct .attrTemp{
+	border: 1px dashed;
+	padding: 5px;
+    width: 97.5%;
+    float: left;
+    background-color: #C0E3F2;
+}
+
+.moduleDataStruct .attr .title, .moduleDataStructTemp .attr .title{
+	font-weight: bold;
+}
+
+.moduleDataStruct .attrType, .moduleDataStructTemp .attrType{
+    color: lightgray;
+    margin: 0 3px;
+    position: absolute;	
+    top: 0;
+}
+
+.moduleDataStruct .attrStatus {
+    background-color: gray;
+    color: pink;
+    float: left;
+    min-height: 15px;
+    width: 100%;
+}
+
+.moduleDataStruct .attrGroupStatus{
+	color: red;
+}
+.moduleDataStruct .attrName, .moduleDataStructTemp .attrName{
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    width: 100%;
+    float: left;
+    height: 26px;
+    line-height: 26px;
+    position: relative;
+}
+
+.moduleDataStruct .attrTitle, .moduleDataStructTemp .attrTitle{
+    float: left;
+    width: 100%;
+	
+}
+
+.moduleDataStruct .attrVisibility, .moduleDataStructTemp .attrVisibility{
+    float: left;
+    width: 33%;
+	
+}
+
+.moduleDataStruct .attrRequired, .moduleDataStructTemp .attrRequired{
+    float: left;
+    width: 33%;
+
+}
+
+.moduleDataStruct .attrArray, .moduleDataStructTemp .attrArray{
+    float: left;
+    width: 33%;
+
+}
+
+.moduleDataStructTemp .attr {
+	background-color: #EEEEEE;
+	z-index: 1000;
+}
+
+
+.moduleDataStruct .functionBtnsForAttr .handlerForFuncBtns{
+	background: url("/img/pagebuilder/two_arrow_left.png") no-repeat scroll left center #4A4A4A;
+}
+
+
+
+
+
+/* end for module attr */
+
+/* 
+.moduleDataStruct .groupDelete, .moduleDataStruct .groupDuplicate{
+    margin-left: 94%;
+    margin-top: 2px;
+    position: absolute;	
+    top: 0;
+}
+ */
+.moduleDataStruct .attr .attrDelete, .moduleDataStruct .attr .attrDuplicate{
+    left: 96.5%;
+    margin-top: 5px;
+    position: absolute;
+    top: 0;
+}
+
+.moduleAttrListContainer .noDraggable{
+	color: gray;
+}
+
+
+
+
+/* begin css for media list for module config */
+.medialistForModuleConfig {
+    background-color: gray;
+    border: 1px solid gray;
+    height: 100%;
+    width:100%;
+    overflow: auto;
+    position: absolute;
+    top: 0;
+}
+
+.mediaTreeAndShowArea{
+	height: 80%;
+}
+/* 
+#mediaTreeForModuleConfig{
+	height: 100%;
+	width: 50%;
+	float: left;
+	overflow: auto;
+}
+ */
+.mediaShowArea{
+	height: 100%;
+	width: 49.9%;
+	float: right;
+	background-color: white;
+}
+
+.mediaShowArea .imgContainer{
+    background-color: gray;
+    height: 200px;
+    margin: 20px auto;
+    width: 200px;
+    overflow-x: scroll;
+}
+
+.btnSection{
+	height: 20%;
+	text-align: center;
+}
+
+.btnSection img{
+	margin: 10px 20px;
+	cursor: pointer;
+}
+
+/* begin css for image attr selection */
+.jstree-leaf[rel="default"] a> .jstree-icon{
+	background-image:url(/js/brands/jsTree/file.png);
+	background-position: 0 0;
+}		
+
+.jstree-leaf[rel="image"] a> .jstree-icon{
+	background-image:url(/img/vendor/web-icons/image.png);
+	background-position: 0 0;
+}		
+
+.jstree-leaf[rel="pdf"] a> .jstree-icon{
+	background-image:url(/img/vendor/web-icons/document-pdf-text.png);
+	background-position: 0 0;
+}
+
+
+.jstree-leaf.noSelectable{
+	-moz-opacity:.50; -ms-filter:alpha(opacity=50); filter:alpha(opacity=50); opacity:.50;
+}
+		
+/* end css for image attr selection */
+
+
+/* begin css for media list for module config */
+
+.moduleInstanceDataStruct{
+	width: 100%;
+}
+
+.moduleInstanceDataStruct .attrListContainer{
+	background-color: white;
+}
+/* 
+.moduleInstanceDataStruct .groupset legend{
+	background-color: white;
+}
+ */
+
+.moduleInstanceDataStruct .attr .attrDelete{
+	left: 96%;
+}
+
+.moduleInstanceDataStruct .attr .attrDuplicate{
+	left: 96%;
+}
+
+
+

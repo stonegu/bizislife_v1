@@ -1,0 +1,158 @@
+.pb_page{
+	background-color: gray;
+	float: left;
+/* 	
+	height: 500px;
+	width: 500px;
+ */	
+	position: relative;
+}
+
+.pagebuildinfo.error{
+	color:red;
+}
+
+#containerModuleSchedule .scheduleTable input{
+	width: 70px;
+}
+#moduleInstanceSchedule .scheduleTable input{
+	width: 70px;
+}
+
+.context-menu-item.icon-pbContainer {
+    background-image: url("/img/vendor/web-icons/layout-select-content_plus.png");
+}
+.context-menu-item.icon-pbSchedule {
+    background-image: url("/img/vendor/web-icons/calendar--plus.png");
+}
+.context-menu-item.icon-pbRemoveContainer {
+    background-image: url("/img/vendor/web-icons/cross-circle-frame.png");
+}
+
+
+/* begin for module data structure */
+.moduleDataStruct{
+    float: left;
+    height: 250px;
+    width: 100%;
+    overflow: auto;
+}
+.moduleDataStruct .groupset{
+	border: 1px solid;
+	width: 93%;
+	float: left;
+	margin-bottom: 20px;
+	position: relative;
+}
+.moduleDataStruct .groupset.duplicated{
+	border: 1px dashed;
+}
+
+.moduleDataStruct .newGroupSetBtn{
+	border: 1px solid;
+	width: 100px;
+	float: left;
+	margin: 20px 0;
+}
+
+.moduleDataStruct .groupStatus{
+	width: 100%;
+	float: left;
+	color: pink;
+}
+
+.moduleDataStruct .attrListContainer{
+    width: 100%;	
+    float: left;
+    padding: 4px 0;
+}
+
+/* for module attr */
+.moduleDataStruct .attr{
+    border: 1px solid;
+    padding: 5px;
+    width: 97.5%;
+    margin: 10px 0;
+    float: left;
+    background-color: #EEEEEE;
+}
+.moduleDataStruct .attr.duplicated{
+    border: 1px dashed;
+}
+.moduleDataStruct .attr .title, .moduleDataStructTemp .attr .title{
+	font-weight: bold;
+}
+
+.moduleDataStruct .attrType, .moduleDataStructTemp .attrType{
+    color: lightgray;
+    margin: 0 3px;
+    position: absolute;	
+    top: 0;
+}
+
+.moduleDataStruct .attrStatus {
+    background-color: gray;
+    color: pink;
+    float: left;
+    min-height: 15px;
+    width: 99%;
+    padding: 0 3px;
+}
+
+.moduleDataStruct .attrGroupStatus{
+	color: red;
+}
+.moduleDataStruct .attrName, .moduleDataStructTemp .attrName{
+	background-color: gray;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    width: 100%;
+    float: left;
+    height: 26px;
+    position: relative;
+}
+
+.moduleDataStruct .attrTitle, .moduleDataStructTemp .attrTitle{
+    float: left;
+    width: 100%;
+	
+}
+
+.moduleDataStruct .attrVisibility, .moduleDataStructTemp .attrVisibility{
+    float: left;
+    width: 33%;
+	
+}
+
+.moduleDataStruct .attrRequired, .moduleDataStructTemp .attrRequired{
+    float: left;
+    width: 33%;
+
+}
+
+.moduleDataStruct .attrArray, .moduleDataStructTemp .attrArray{
+    float: left;
+    width: 33%;
+
+}
+/* end for module data structure */
+
+
+.containerModuleScheduleConfig h2, .moduleInstanceScheduleConfig h2{
+	font-size: 20px;
+	margin: 0;
+	padding: 0;
+}
+.containerModuleScheduleConfig h3, .moduleInstanceScheduleConfig h3{
+	font-size: 18px;
+	margin-top: 10px;
+}
+.containerModuleScheduleConfig p, .moduleInstanceScheduleConfig p{
+	margin: 0;
+	padding: 0;
+}
+.containerModuleScheduleConfig .schedDate input, .moduleInstanceScheduleConfig .schedDate input{
+	float: right;
+	height: 15px;
+}
